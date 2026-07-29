@@ -54,6 +54,8 @@ export function ModeSelection() {
         items={modes}
         selectedIndex={selected}
         onSelect={handleSelect}
+        onMove={setSelected}
+        pageSize={3}
       />
     </div>
   );

@@ -40,6 +40,8 @@ export function SmartModeSelect() {
         }))}
         selectedIndex={selected}
         onSelect={(index) => { setSelected(index); updateSetting("dynamicStrategy", options[index].label as typeof settings.dynamicStrategy); }}
+        onMove={setSelected}
+        pageSize={3}
       />
     </div>
   );

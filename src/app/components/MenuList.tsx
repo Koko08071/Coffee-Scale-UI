@@ -1,6 +1,6 @@
 import { ChevronRight, Circle } from "lucide-react";
-import type { ComponentType } from "react";
-import { useEffect, useRef } from "react";
+import type { ComponentType, WheelEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type ScreenIcon = ComponentType<{ className?: string; strokeWidth?: number }>;
 
@@ -34,24 +34,95 @@ export function MenuList({
   selectedIndex = -1,
   onSelect,
   onBack,
+  onMove,
   title,
   subtitle,
+  pageSize,
 }: {
   items: MenuItem[];
   selectedIndex?: number;
   onSelect: (index: number) => void;
   onBack?: () => void;
+  onMove?: (index: number) => void;
   title?: string;
   subtitle?: string;
+  /** Limits each hardware screen to a fixed number of visible menu rows. */
+  pageSize?: number;
 }) {
   const selectedRef = useRef<HTMLButtonElement>(null);
+  const lastWheelAtRef = useRef(0);
+  const previousSelectedIndexRef = useRef(selectedIndex);
+  const hideIndicatorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showScrollIndicator, setShowScrollIndicator] = useState(false);
+  const resolvedPageSize = pageSize && pageSize > 0
+    ? Math.max(1, Math.floor(pageSize))
+    : Math.max(1, items.length);
+  const visibleCount = Math.min(resolvedPageSize, items.length);
+  const hasScrollableItems = Boolean(pageSize && items.length > visibleCount);
+  const maxWindowStart = Math.max(0, items.length - visibleCount);
+  const selectedWindowStart = selectedIndex >= 0
+    ? selectedIndex - Math.floor(visibleCount / 2)
+    : 0;
+  const pageStart = pageSize
+    ? Math.min(maxWindowStart, Math.max(0, selectedWindowStart))
+    : 0;
+  const visibleItems = pageSize
+    ? items.slice(pageStart, pageStart + visibleCount)
+    : items;
+  const thumbHeightPercent = hasScrollableItems
+    ? Math.max(18, (visibleCount / items.length) * 100)
+    : 100;
+  const thumbTopPercent = hasScrollableItems && maxWindowStart > 0
+    ? (pageStart / maxWindowStart) * (100 - thumbHeightPercent)
+    : 0;
 
   useEffect(() => {
-    selectedRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, [selectedIndex]);
+    if (!pageSize) {
+      selectedRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+  }, [selectedIndex, pageSize]);
+
+  useEffect(() => {
+    if (previousSelectedIndexRef.current === selectedIndex) return;
+    previousSelectedIndexRef.current = selectedIndex;
+    if (!hasScrollableItems) return;
+
+    setShowScrollIndicator(true);
+    if (hideIndicatorTimerRef.current) {
+      clearTimeout(hideIndicatorTimerRef.current);
+    }
+    hideIndicatorTimerRef.current = setTimeout(() => {
+      setShowScrollIndicator(false);
+      hideIndicatorTimerRef.current = null;
+    }, 1000);
+
+    return () => {
+      if (hideIndicatorTimerRef.current) {
+        clearTimeout(hideIndicatorTimerRef.current);
+        hideIndicatorTimerRef.current = null;
+      }
+    };
+  }, [hasScrollableItems, selectedIndex]);
+
+  const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
+    if (!onMove || items.length < 2 || Math.abs(event.deltaY) < 1) return;
+    event.preventDefault();
+
+    const now = Date.now();
+    if (now - lastWheelAtRef.current < 90) return;
+    lastWheelAtRef.current = now;
+
+    const currentIndex = selectedIndex >= 0 ? selectedIndex : 0;
+    const direction = event.deltaY > 0 ? 1 : -1;
+    const nextIndex = Math.max(0, Math.min(items.length - 1, currentIndex + direction));
+    if (nextIndex !== currentIndex) onMove(nextIndex);
+  };
 
   return (
-    <div className="menu-list flex h-full flex-col overflow-hidden px-3">
+    <div
+      className="menu-list relative flex h-full flex-col overflow-hidden px-3"
+      onWheel={handleWheel}
+    >
       {/* 标题区 */}
       {title && (
         <div className="menu-header flex-none px-1 pb-2 pt-3 text-center">
@@ -60,8 +131,16 @@ export function MenuList({
       )}
 
       {/* 菜单项 */}
-      <div className="menu-scroll flex-1 space-y-1.5 overflow-y-auto pb-3 pt-1">
-        {items.map((item, idx) => {
+      <div
+        className={`menu-scroll min-h-0 flex-1 pt-1 ${
+          pageSize
+            ? "grid gap-2 overflow-hidden pb-2"
+            : "space-y-1.5 overflow-y-auto pb-3"
+        }`}
+        style={pageSize ? { gridTemplateRows: `repeat(${resolvedPageSize}, minmax(0, 1fr))` } : undefined}
+      >
+        {visibleItems.map((item, localIndex) => {
+          const idx = pageStart + localIndex;
           const isSelected = idx === selectedIndex;
           const Icon = item.icon ?? Circle;
 
@@ -71,7 +150,7 @@ export function MenuList({
               ref={isSelected ? selectedRef : undefined}
               type="button"
               onClick={() => onSelect(idx)}
-              className={`menu-row group flex w-full items-center gap-3 px-3 py-2.5 text-left ${isSelected ? "is-selected" : ""} ${item.danger ? "is-danger" : ""} ${item.className ?? ""}`}
+              className={`menu-row group flex w-full items-center gap-3 px-3 py-2.5 text-left ${pageSize ? "min-h-0" : ""} ${isSelected ? "is-selected" : ""} ${item.danger ? "is-danger" : ""} ${item.className ?? ""}`}
             >
               <span className={`menu-icon flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] border transition-colors ${
                 isSelected
@@ -103,6 +182,23 @@ export function MenuList({
           );
         })}
       </div>
+
+      {hasScrollableItems && (
+        <div
+          aria-hidden="true"
+          className={`pointer-events-none absolute bottom-3 right-1 w-[3px] overflow-hidden rounded-full bg-white/[0.045] transition-opacity duration-300 ${
+            title ? "top-14" : "top-3"
+          } ${showScrollIndicator ? "opacity-100" : "opacity-0"}`}
+        >
+          <span
+            className="absolute left-0 w-full rounded-full bg-[#43C7FF] shadow-[0_0_8px_rgba(67,199,255,.65)] transition-[top,height] duration-200 ease-out"
+            style={{
+              height: `${thumbHeightPercent}%`,
+              top: `${thumbTopPercent}%`,
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -228,12 +228,14 @@ export function SimpleSettings() {
   }
 
   return (
-    <div className="screen-surface h-full overflow-y-auto pt-4">
+    <div className="screen-surface h-full overflow-hidden pt-4">
       <MenuList
         title={config.title}
         items={config.options.map((option) => ({ label: option, info: currentValue === option ? t("common.current") : undefined }))}
         selectedIndex={selected}
         onSelect={(idx) => { setSelected(idx); const opt = config.options![idx]; updateSetting(config.settingKey!, opt as never); }}
+        onMove={setSelected}
+        pageSize={3}
       />
     </div>
   );

@@ -48,8 +48,8 @@ export function CurveBrewingMode() {
   }, [selected, handleSelect, navigate, actions.length]);
 
   return (
-    <div className="h-full screen-surface overflow-y-auto">
-      <MenuList title="曲线冲煮结束" subtitle="选择下一步操作" items={actions} selectedIndex={selected} onSelect={handleSelect} />
+    <div className="h-full screen-surface overflow-hidden">
+      <MenuList title="曲线冲煮结束" subtitle="选择下一步操作" items={actions} selectedIndex={selected} onSelect={handleSelect} onMove={setSelected} pageSize={3} />
     </div>
   );
 }

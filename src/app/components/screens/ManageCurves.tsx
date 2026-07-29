@@ -96,13 +96,15 @@ export function ManageCurves() {
 
   return (
     <div className="screen-surface flex h-full flex-col">
-      <div className="flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-hidden">
         <MenuList
           title={t("manage.delete")}
           subtitle={`${categoryInfo.label} · ${items.length} ${t("manage.count")}`}
           items={items}
           selectedIndex={selected}
           onSelect={() => {}}
+          onMove={setSelected}
+          pageSize={3}
         />
       </div>
 

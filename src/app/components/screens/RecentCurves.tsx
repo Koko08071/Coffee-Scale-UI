@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { MenuList } from "../MenuList";
 import { useSettings } from "../SettingsContext";
@@ -9,20 +9,7 @@ export function RecentCurves() {
   const navigate = useNavigate();
   const { settings } = useSettings();
   const { t } = useT();
-
-  useEffect(() => {
-    const handleAction = (e: Event) => {
-      const detail = (e as CustomEvent).detail || {};
-      const { type } = detail as { type?: string };
-      if (type === "navigate-back") navigate("/mode-selection/curve/select");
-    };
-    window.addEventListener("simulator-action", handleAction);
-    window.addEventListener("hardware-action", handleAction);
-    return () => {
-      window.removeEventListener("simulator-action", handleAction);
-      window.removeEventListener("hardware-action", handleAction);
-    };
-  }, [navigate]);
+  const [selected, setSelected] = useState(0);
 
   const recentMap = new Map<string, { id: string; name: string; info: string }>();
 
@@ -48,38 +35,64 @@ export function RecentCurves() {
     }
   }
 
-  const items = Array.from(recentMap.values()).map((item) => ({
+  const recentItems = Array.from(recentMap.values());
+  const items = recentItems.map((item) => ({
     label: item.name,
     icon: LineChart,
   }));
 
+  const handleSelect = (index: number) => {
+    const curve = recentItems[index];
+    if (curve) navigate(`/mode-selection/curve/prepare?curve=${curve.id}&from=recent`);
+  };
+
+  useEffect(() => {
+    const handleAction = (e: Event) => {
+      const detail = (e as CustomEvent).detail || {};
+      const { type, direction } = detail as { type?: string; direction?: number };
+      if (type === "navigate-back") {
+        navigate("/mode-selection/curve/select");
+      } else if (type === "rotary-turn" && items.length > 0) {
+        setSelected((value) => (value + (direction ?? 1) + items.length) % items.length);
+      } else if (type === "knob-single-click") {
+        handleSelect(selected);
+      }
+    };
+    window.addEventListener("simulator-action", handleAction);
+    window.addEventListener("hardware-action", handleAction);
+    return () => {
+      window.removeEventListener("simulator-action", handleAction);
+      window.removeEventListener("hardware-action", handleAction);
+    };
+  }, [items.length, navigate, selected]);
+
   return (
     <div className="screen-surface flex h-full flex-col text-white">
-      <div className="mb-3 px-4 pt-4 text-center">
-        <h1 className="text-lg font-medium">{t("curve.recent")}</h1>
-      </div>
-
       {items.length > 0 ? (
         <MenuList
+          title={t("curve.recent")}
           items={items}
-          onSelect={(index) => {
-            const selected = Array.from(recentMap.values())[index];
-            if (selected) {
-              navigate(`/mode-selection/curve/prepare?curve=${selected.id}&from=recent`);
-            }
-          }}
+          selectedIndex={selected}
+          onSelect={handleSelect}
+          onMove={setSelected}
+          pageSize={3}
         />
       ) : (
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center text-slate-400">
-          <p>{t("manage.noRecent")}</p>
-          <button
-            type="button"
-            onClick={() => navigate("/mode-selection/curve/select")}
-            className="rounded-full bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-500"
-          >
-            {t("manage.goSelect")}
-          </button>
-        </div>
+        <>
+          <div className="px-4 pt-4 text-center">
+            <h1 className="text-lg font-medium">{t("curve.recent")}</h1>
+          </div>
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center text-slate-400">
+            <p>{t("manage.noRecent")}</p>
+            <button
+              type="button"
+              onClick={() => navigate("/mode-selection/curve/select")}
+              className="rounded-full bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-500"
+            >
+              {t("manage.goSelect")}
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

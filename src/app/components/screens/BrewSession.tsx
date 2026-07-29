@@ -430,7 +430,7 @@ export function BrewSession({ mode }: { mode: BrewMode }) {
   if (view === "actions") {
     return (
       <div className="screen-surface h-full">
-        <MenuList title="本次冲煮" subtitle="旋转选择，按下确认" items={actions} selectedIndex={selectedAction} onSelect={performAction} />
+        <MenuList title="本次冲煮" subtitle="旋转选择，按下确认" items={actions} selectedIndex={selectedAction} onSelect={performAction} onMove={setSelectedAction} pageSize={3} />
       </div>
     );
   }

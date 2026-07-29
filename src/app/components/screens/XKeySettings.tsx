@@ -41,6 +41,8 @@ export function XKeySettings() {
         items={MODE_KEYS.map((mode) => ({ label: MODE_LABELS[mode], info: settings.xKeyMode === mode ? t("common.current") : undefined }))}
         selectedIndex={selected}
         onSelect={(index) => { setSelected(index); updateSetting("xKeyMode", MODE_KEYS[index]); }}
+        onMove={setSelected}
+        pageSize={3}
       />
     </div>
   );

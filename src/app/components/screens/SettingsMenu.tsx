@@ -61,13 +61,15 @@ export function SettingsMenu() {
   }, [selected, handleSelect, navigate, settingsItems.length]);
 
   return (
-    <div className="h-full screen-surface overflow-y-auto">
+    <div className="h-full screen-surface overflow-hidden">
       <MenuList
         title="设置"
         subtitle="旋转旋钮选择，按下进入"
         items={settingsItems}
         selectedIndex={selected}
         onSelect={handleSelect}
+        onMove={setSelected}
+        pageSize={3}
       />
     </div>
   );

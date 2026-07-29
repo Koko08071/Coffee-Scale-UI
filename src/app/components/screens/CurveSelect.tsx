@@ -23,7 +23,7 @@ function useCategories() {
 function RootCurveSelect({ recommendedId }: { recommendedId: string }) {
   const navigate = useNavigate();
   const { t } = useT();
-  const [selected, setSelected] = useState(-1);
+  const [selected, setSelected] = useState(0);
 
   const items: MenuItem[] = useMemo(
     () => [
@@ -60,7 +60,7 @@ function RootCurveSelect({ recommendedId }: { recommendedId: string }) {
 
   return (
     <div className="h-full screen-surface">
-      <MenuList title="智能曲线指导" subtitle="推荐开始 · 最近使用 · 选择曲线" items={items} selectedIndex={selected} onSelect={(idx) => navigate(paths[idx])} />
+      <MenuList title="智能曲线指导" subtitle="推荐开始 · 最近使用 · 选择曲线" items={items} selectedIndex={selected} onSelect={(idx) => navigate(paths[idx])} onMove={setSelected} pageSize={3} />
     </div>
   );
 }
@@ -68,7 +68,7 @@ function RootCurveSelect({ recommendedId }: { recommendedId: string }) {
 function CategoryCurveSelect({ categories }: { categories: CategoryDef[] }) {
   const navigate = useNavigate();
   const { t } = useT();
-  const [selected, setSelected] = useState(-1);
+  const [selected, setSelected] = useState(0);
 
   const items: MenuItem[] = useMemo(
     () =>
@@ -103,7 +103,7 @@ function CategoryCurveSelect({ categories }: { categories: CategoryDef[] }) {
 
   return (
     <div className="h-full screen-surface">
-      <MenuList title={t("curve.selectCurve")} subtitle="旋转旋钮选择分类，按下确认" items={items} selectedIndex={selected} onSelect={(idx) => navigate(paths[idx])} />
+      <MenuList title={t("curve.selectCurve")} subtitle="旋转旋钮选择分类，按下确认" items={items} selectedIndex={selected} onSelect={(idx) => navigate(paths[idx])} onMove={setSelected} pageSize={3} />
     </div>
   );
 }
@@ -112,7 +112,7 @@ function CurveListSelect({ category }: { category: CategoryDef }) {
   const navigate = useNavigate();
   const { settings, updateSetting } = useSettings();
   const { t } = useT();
-  const [selected, setSelected] = useState(-1);
+  const [selected, setSelected] = useState(0);
   const [removeMode, setRemoveMode] = useState(false);
   const [pendingCurveId, setPendingCurveId] = useState<string | null>(null);
   const [removeChoice, setRemoveChoice] = useState<RemoveCurveChoice>("cancel");
@@ -230,8 +230,8 @@ function CurveListSelect({ category }: { category: CategoryDef }) {
   const subtitle = removeMode ? t("curve.removeModeHint") : curves.length > 0 ? "旋转旋钮选择曲线，按下确认" : t("curve.emptyCurves");
 
   return (
-    <div className="h-full screen-surface overflow-y-auto">
-      <MenuList title={category.label} subtitle={subtitle} items={items} selectedIndex={selected} onSelect={handleSelect} />
+    <div className="h-full screen-surface overflow-hidden">
+      <MenuList title={category.label} subtitle={subtitle} items={items} selectedIndex={selected} onSelect={handleSelect} onMove={setSelected} pageSize={3} />
       <RemoveCurveDialog
         open={Boolean(pendingCurve)}
         curveName={pendingCurve?.name ?? ""}
