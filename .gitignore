@@ -1,0 +1,11 @@
+node_modules/
+dist/
+
+# Local environment and runtime output
+.env
+.env.*
+!.env.example
+*.log
+
+# Generated presentation previews
+ppt_ui_logic_build/rendered/

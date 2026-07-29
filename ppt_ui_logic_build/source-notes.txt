@@ -1,0 +1,9 @@
+Internal product sources used for this deck:
+- User-provided current interaction-map screenshot: codex-clipboard-6d055429-fdf3-40ee-8652-6b4b4ac63298.png
+- Current project UI and hardware behavior in src/app/components/screens/CurvePreparation.tsx
+- Current project UI and hardware behavior in src/app/components/screens/EspressoPreparation.tsx
+- Current project UI and hardware behavior in src/app/components/screens/FreePreparation.tsx
+- Open weighing behavior in src/app/components/screens/CurveBeanWeighing.tsx
+- Physical-key routing in src/app/components/CoffeeScaleSimulator.tsx
+
+No external web claims or external visual assets were used.
