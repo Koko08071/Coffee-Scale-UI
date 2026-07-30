@@ -153,11 +153,14 @@ export function EspressoMode() {
     };
   }, [navigate, pauseTimer, resetTimer, startTimer, tare, targetYield]);
 
-  const visualState = overload || progressRatio > 1.01
-    ? "over"
-    : progressRatio >= 0.85
-      ? "near"
-      : "normal";
+  const hasBrewStarted = timer.isRunning || timer.time > 0 || completedRef.current;
+  const visualState = !hasBrewStarted
+    ? "normal"
+    : overload || progressRatio > 1.01
+      ? "over"
+      : progressRatio >= 0.85
+        ? "near"
+        : "normal";
   const flowProgress = Math.min(Math.abs(timer.flowRate) / 8, 1);
   const flowBarWidth = 12 + flowProgress * 88;
   const orbScale = 0.82 + Math.min(progressRatio, 1) * 0.18;
