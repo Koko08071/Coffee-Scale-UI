@@ -60,7 +60,7 @@ function RootCurveSelect({ recommendedId }: { recommendedId: string }) {
 
   return (
     <div className="h-full screen-surface">
-      <MenuList title="智能曲线指导" subtitle="推荐开始 · 最近使用 · 选择曲线" items={items} selectedIndex={selected} onSelect={(idx) => navigate(paths[idx])} onMove={setSelected} pageSize={3} />
+      <MenuList title={t("curve.titleGuide")} subtitle="推荐开始 · 最近使用 · 选择曲线" items={items} selectedIndex={selected} onSelect={(idx) => navigate(paths[idx])} onMove={setSelected} pageSize={3} />
     </div>
   );
 }
