@@ -18,7 +18,7 @@ import { OneKeyCalibration } from "./components/screens/OneKeyCalibration";
 import { NotFound } from "./components/screens/NotFound";
 import { CurveSelect } from "./components/screens/CurveSelect";
 import { CurvePreparation } from "./components/screens/CurvePreparation";
-import { CurveBeanWeighing, EspressoBeanWeighing } from "./components/screens/CurveBeanWeighing";
+import { CurveBeanWeighing, EspressoBeanWeighing, FreeBeanWeighing } from "./components/screens/CurveBeanWeighing";
 import { SimpleSettings } from "./components/screens/SimpleSettings";
 import { SoftwareUpdate } from "./components/screens/SoftwareUpdate";
 
@@ -51,6 +51,7 @@ export const router = createBrowserRouter([
       { path: "mode-selection/curve/weigh", Component: CurveBeanWeighing },
       { path: "mode-selection/curve/replicate", Component: ReplicateCurve },
       { path: "mode-selection/free", Component: FreePreparation },
+      { path: "mode-selection/free/weigh", Component: FreeBeanWeighing },
       { path: "mode-selection/free/brewing", Component: FreeBrewing },
       { path: "mode-selection/espresso", Component: EspressoPreparation },
       { path: "mode-selection/espresso/weigh", Component: EspressoBeanWeighing },

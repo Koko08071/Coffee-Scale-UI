@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router";
 import { RotateCcw, Save, ArrowLeft } from "lucide-react";
 import { MenuItem, MenuList } from "../MenuList";
 import { useHardware } from "../HardwareContext";
-import { useSettings } from "../SettingsContext";
+import { useSettings, type BrewCurve } from "../SettingsContext";
 import { useT } from "../../i18n/I18nContext";
 
 type BrewMode = "free" | "curve";
@@ -21,6 +21,16 @@ function parseDuration(value?: string) {
   return Number(minutes) * 60 + Number(seconds);
 }
 
+function getNextMyCurveName(curves: BrewCurve[]) {
+  const highestSequence = curves.reduce((highest, item) => {
+    if (item.source !== "我的曲线") return highest;
+    const match = item.name.match(/^我的曲线\s+(\d+)$/);
+    return match ? Math.max(highest, Number(match[1])) : highest;
+  }, 0);
+
+  return `我的曲线 ${String(highestSequence + 1).padStart(2, "0")}`;
+}
+
 export function BrewSession({ mode }: { mode: BrewMode }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -36,11 +46,11 @@ export function BrewSession({ mode }: { mode: BrewMode }) {
   const sessionDose = Number.parseFloat(searchParams.get("dose") ?? "");
   const targetWeight = mode === "curve"
     ? Number.isFinite(sessionWater) ? sessionWater : Number.parseFloat(curve?.weight ?? "240")
-    : settings.freeYield;
+    : Number.isFinite(sessionWater) ? sessionWater : settings.freeYield;
   const targetDuration = mode === "curve" ? parseDuration(curve?.duration) : 150;
   const dose = mode === "curve"
     ? Number.isFinite(sessionDose) ? sessionDose : curve?.dose ?? 15
-    : settings.freeDose;
+    : Number.isFinite(sessionDose) ? sessionDose : settings.freeDose;
   const doseKnown = dose > 0;
 
   const [view, setView] = useState<ViewState>("ready");
@@ -51,6 +61,7 @@ export function BrewSession({ mode }: { mode: BrewMode }) {
   const [selectedAction, setSelectedAction] = useState(0);
   const [reviewing, setReviewing] = useState(false); // 回看模式
   const [saved, setSaved] = useState(false); // 是否已保存曲线
+  const [savedCurveName, setSavedCurveName] = useState("");
   const [activeBrewStage, setActiveBrewStage] = useState(0);
   const pourStageRef = useRef({ pourCount: 0, pouring: false, pauseStartedAt: 0 });
   const viewRef = useRef(view);
@@ -72,6 +83,8 @@ export function BrewSession({ mode }: { mode: BrewMode }) {
     lastValidWeightRef.current = 0;
     setCursor(0);
     setReviewing(false);
+    setSaved(false);
+    setSavedCurveName("");
     setActiveBrewStage(0);
     pourStageRef.current = { pourCount: 0, pouring: false, pauseStartedAt: 0 };
   }, [mode, curve?.id, resetTimer]);
@@ -182,17 +195,22 @@ export function BrewSession({ mode }: { mode: BrewMode }) {
 
   const saveRecord = useCallback(() => {
     const finalWeight = overload ? lastValidWeightRef.current : timer.weight;
-    const record = {
-      id: `brew-${Date.now()}`,
-      name: mode === "curve" ? curve?.name ?? "曲线复刻" : "最近曲线",
+    const curveName = getNextMyCurveName(settings.curves);
+    const savedCurve: BrewCurve = {
+      id: `my-${Date.now()}`,
+      name: curveName,
       weight: `${finalWeight.toFixed(1)}g`,
-      duration: formatTime(timer.time),
-      score: "—",
-      curveId: mode === "curve" ? curve?.id : undefined,
+      duration: formatTime(finishTimeRef.current || timer.time),
+      source: "我的曲线",
+      dose,
+      ratio: dose > 0 ? Math.round((finalWeight / dose) * 10) / 10 : 0,
+      grind: mode === "curve" ? curve?.grind ?? 5 : 5,
     };
-    updateSetting("brewHistory", [record, ...settings.brewHistory].slice(0, 3));
+    updateSetting("curves", [...settings.curves, savedCurve]);
+    updateSetting("lastUsedCurve", savedCurve.id);
+    setSavedCurveName(curveName);
     setSaved(true);
-  }, [curve?.id, curve?.name, mode, overload, settings.brewHistory, timer.time, timer.weight, updateSetting]);
+  }, [curve?.grind, dose, mode, overload, settings.curves, timer.time, timer.weight, updateSetting]);
 
   const backLabelKey = useMemo(() => {
     if (mode === "free") return "free.backToFree";
@@ -208,7 +226,7 @@ export function BrewSession({ mode }: { mode: BrewMode }) {
 
   const actions: MenuItem[] = [
     { key: "brewAgain", label: t(mode === "curve" ? "replicate.brewAgain" : "free.brewAgain"), subtitle: t(mode === "curve" ? "replicate.brewAgainHint" : "free.brewAgainHint"), icon: RotateCcw },
-    { key: "save", label: saved ? t(mode === "curve" ? "replicate.saved" : "free.saved") : t(mode === "curve" ? "replicate.saveCurve" : "free.saveAsMine"), subtitle: saved ? t(mode === "curve" ? "replicate.savedHint" : "free.savedHint") : "保留本次实际曲线", icon: Save },
+    { key: "save", label: saved ? t(mode === "curve" ? "replicate.saved" : "free.saved") : t(mode === "curve" ? "replicate.saveCurve" : "free.saveAsMine"), subtitle: saved ? t("curve.savedAs").replace("{name}", savedCurveName) : "保留本次实际曲线", icon: Save },
     { key: "back", label: t(backLabelKey), subtitle: "", icon: ArrowLeft },
   ];
 

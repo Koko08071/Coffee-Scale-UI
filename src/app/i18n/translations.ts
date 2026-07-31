@@ -113,6 +113,7 @@ export const translations = {
     "curve.brewing": "冲煮",
     "curve.deleteCurve": "移除曲线",
     "curve.removeCopy": "移除秤端副本",
+    "curve.savedAs": "已保存为 {name}",
 
     // ========== 曲线冲煮 ==========
     "curve.titleGuide": "智能曲线指导",
@@ -254,6 +255,8 @@ export const translations = {
     "free.prep.totalWater": "总水量",
     "free.prep.totalWeight": "总重量",
     "free.prep.adjustParams": "调整参数",
+    "free.prep.weigh": "称量",
+    "free.prep.measured": "实测",
     "free.prep.startBrew": "开始冲煮",
     "free.prep.hint": "粉量、粉水比和总重量联动换算；本次调整不覆盖默认配方。",
 
@@ -508,6 +511,7 @@ export const translations = {
     "curve.brewing": "Brewing",
     "curve.deleteCurve": "Remove Curve",
     "curve.removeCopy": "Remove from scale",
+    "curve.savedAs": "Saved as {name}",
 
     // ========== Curve Brewing Mode ==========
     "curve.titleGuide": "Curve Guide",
@@ -650,6 +654,8 @@ export const translations = {
     "free.prep.totalWater": "Total Water",
     "free.prep.totalWeight": "Total Weight",
     "free.prep.adjustParams": "Adjust Parameters",
+    "free.prep.weigh": "Weigh",
+    "free.prep.measured": "Measured",
     "free.prep.startBrew": "Start Brewing",
     "free.prep.hint": "Dose, ratio and total weight are linked; this adjustment does not override the default recipe.",
 

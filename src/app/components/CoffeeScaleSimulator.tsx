@@ -315,7 +315,7 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
   }, [location.pathname, resetPaths, items, beanWeight, syncWeight]);
 
   const isBrewSession = location.pathname === "/mode-selection/free/brewing" || location.pathname === "/mode-selection/curve/replicate";
-  const isBeanWeighing = location.pathname === "/mode-selection/curve/weigh" || location.pathname === "/mode-selection/espresso/weigh";
+  const isBeanWeighing = location.pathname === "/mode-selection/curve/weigh" || location.pathname === "/mode-selection/espresso/weigh" || location.pathname === "/mode-selection/free/weigh";
   const isBrewing = isBrewSession || location.pathname === "/mode-selection/espresso/brewing";
 
   // 持续效果：注水、尖嘴壶注水、咖啡液滴

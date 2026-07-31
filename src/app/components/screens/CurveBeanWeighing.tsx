@@ -11,7 +11,7 @@ function readNumber(value: string | null, fallback: number) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-type WeighMode = "curve" | "espresso";
+type WeighMode = "curve" | "espresso" | "free";
 
 export function CurveBeanWeighing() {
   return <CoffeeBeanWeighing mode="curve" />;
@@ -19,6 +19,10 @@ export function CurveBeanWeighing() {
 
 export function EspressoBeanWeighing() {
   return <CoffeeBeanWeighing mode="espresso" />;
+}
+
+export function FreeBeanWeighing() {
+  return <CoffeeBeanWeighing mode="free" />;
 }
 
 function CoffeeBeanWeighing({ mode }: { mode: WeighMode }) {
@@ -32,12 +36,15 @@ function CoffeeBeanWeighing({ mode }: { mode: WeighMode }) {
     [searchParams, settings.curves],
   );
   const isEspresso = mode === "espresso";
+  const isFree = mode === "free";
   const curveId = curve?.id ?? "recommended-1";
   const from = searchParams.get("from") ?? "";
-  const fallbackDose = isEspresso ? settings.espressoDose : curve?.dose ?? 15;
-  const fallbackWater = isEspresso ? settings.espressoYield : Number.parseFloat(curve?.weight ?? "240");
+  const fallbackDose = isEspresso ? settings.espressoDose : isFree ? settings.freeDose : curve?.dose ?? 15;
+  const fallbackWater = isEspresso ? settings.espressoYield : isFree ? settings.freeYield : Number.parseFloat(curve?.weight ?? "240");
   const fallbackRatio = isEspresso
     ? fallbackDose > 0 ? round1(fallbackWater / fallbackDose) : 2
+    : isFree
+      ? fallbackDose > 0 ? round1(fallbackWater / fallbackDose) : 15
     : curve?.ratio ?? 16;
   const originalDose = readNumber(searchParams.get("dose"), fallbackDose);
   const ratio = readNumber(searchParams.get("ratio"), fallbackRatio);
@@ -54,7 +61,7 @@ function CoffeeBeanWeighing({ mode }: { mode: WeighMode }) {
 
   const buildPrepareUrl = useCallback((nextDose = originalDose, source = originalSource) => {
     const params = new URLSearchParams();
-    if (!isEspresso) {
+    if (mode === "curve") {
       params.set("curve", curveId);
       if (from) params.set("from", from);
     }
@@ -62,9 +69,13 @@ function CoffeeBeanWeighing({ mode }: { mode: WeighMode }) {
     params.set("ratio", ratio.toFixed(1));
     params.set("water", (source === "measured" ? Math.round(nextDose * ratio) : Math.round(originalWater)).toString());
     params.set("doseSource", source);
-    const pathname = isEspresso ? "/mode-selection/espresso" : "/mode-selection/curve/prepare";
+    const pathname = isEspresso
+      ? "/mode-selection/espresso"
+      : isFree
+        ? "/mode-selection/free"
+        : "/mode-selection/curve/prepare";
     return `${pathname}?${params.toString()}`;
-  }, [curveId, from, isEspresso, originalDose, originalSource, originalWater, ratio]);
+  }, [curveId, from, isEspresso, isFree, mode, originalDose, originalSource, originalWater, ratio]);
 
   useEffect(() => {
     setStable(false);

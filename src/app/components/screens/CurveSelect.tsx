@@ -117,7 +117,7 @@ function CurveListSelect({ category }: { category: CategoryDef }) {
   const [pendingCurveId, setPendingCurveId] = useState<string | null>(null);
   const [removeChoice, setRemoveChoice] = useState<RemoveCurveChoice>("cancel");
 
-  const curves = useMemo(() => settings.curves.filter((c) => c.source === category.source).slice(0, 3), [settings.curves, category.source]);
+  const curves = useMemo(() => settings.curves.filter((c) => c.source === category.source), [settings.curves, category.source]);
   const pendingCurve = useMemo(() => curves.find((curve) => curve.id === pendingCurveId) ?? null, [curves, pendingCurveId]);
 
   const items: MenuItem[] = useMemo(() => {
