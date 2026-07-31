@@ -5,7 +5,7 @@
 # 日常称重主界面
 <img width="1346" height="819" alt="image" src="https://github.com/user-attachments/assets/f37eb2b7-66e9-487a-a870-f8864c41c557" />
 
-# 曲线复刻界面
+# 复刻曲线界面
 <img width="1346" height="819" alt="image" src="https://github.com/user-attachments/assets/0be1aa34-f72a-43fb-91d6-f406d93ac452" />
 <img width="1346" height="819" alt="image" src="https://github.com/user-attachments/assets/be7c6cf6-1b3f-481f-965f-3c7d828dd55c" />
 
