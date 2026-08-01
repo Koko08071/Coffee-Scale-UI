@@ -1,7 +1,6 @@
 
   # Smart Coffee Scale UI Design
 
-  This is a code bundle for Smart Coffee Scale UI Design.
   这款智能咖啡秤，以“智能曲线指导”为核心卖点功能，旨在辅助手冲爱好者复刻出一杯满意的手冲咖啡
 # 日常称重主界面
 <img width="1346" height="819" alt="image" src="https://github.com/user-attachments/assets/f37eb2b7-66e9-487a-a870-f8864c41c557" />
