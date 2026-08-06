@@ -226,7 +226,7 @@ export function BrewSession({ mode }: { mode: BrewMode }) {
 
   const actions: MenuItem[] = [
     { key: "brewAgain", label: t(mode === "curve" ? "replicate.brewAgain" : "free.brewAgain"), subtitle: t(mode === "curve" ? "replicate.brewAgainHint" : "free.brewAgainHint"), icon: RotateCcw },
-    { key: "save", label: saved ? t(mode === "curve" ? "replicate.saved" : "free.saved") : t(mode === "curve" ? "replicate.saveCurve" : "free.saveAsMine"), subtitle: saved ? t("curve.savedAs").replace("{name}", savedCurveName) : "保留本次实际曲线", icon: Save },
+    { key: "save", label: saved ? t(mode === "curve" ? "replicate.saved" : "free.saved") : t(mode === "curve" ? "replicate.saveCurve" : "free.saveAsMine"), subtitle: saved ? t("curve.savedAs").replace("{name}", savedCurveName) : t("brew.keepActual"), icon: Save },
     { key: "back", label: t(backLabelKey), subtitle: "", icon: ArrowLeft },
   ];
 
@@ -329,11 +329,11 @@ export function BrewSession({ mode }: { mode: BrewMode }) {
 
   // 冲煮标题颜色与当前三段式阶段保持一致。
   const brewingStage = useMemo((): { label: string; color: string } => {
-    if (view !== "brewing") return { label: "准备冲煮", color: "#8291A6" };
-    if (activeBrewStage === 0) return { label: "闷蒸中", color: "#FFC247" };
-    return { label: "注水中", color: "#43C7FF" };
-  }, [activeBrewStage, view]);
-  const brewStageLabels = ["闷蒸", "第一段注水", "第二段注水"];
+    if (view !== "brewing") return { label: t("brew.ready"), color: "#8291A6" };
+    if (activeBrewStage === 0) return { label: t("brew.blooming"), color: "#FFC247" };
+    return { label: t("brew.pouring"), color: "#43C7FF" };
+  }, [activeBrewStage, t, view]);
+  const brewStageLabels = [t("brew.stageBloom"), t("brew.stageFirst"), t("brew.stageSecond")];
 
   // 冲煮中偏差判定（用于曲线颜色和氛围灯）
   const alertStateRef = useRef({
@@ -448,7 +448,7 @@ export function BrewSession({ mode }: { mode: BrewMode }) {
   if (view === "actions") {
     return (
       <div className="screen-surface h-full">
-        <MenuList title="本次冲煮" subtitle="旋转选择，按下确认" items={actions} selectedIndex={selectedAction} onSelect={performAction} onMove={setSelectedAction} pageSize={3} />
+        <MenuList title={t("brew.session")} subtitle={t("brew.actionHint")} items={actions} selectedIndex={selectedAction} onSelect={performAction} onMove={setSelectedAction} pageSize={3} />
       </div>
     );
   }
@@ -460,10 +460,10 @@ export function BrewSession({ mode }: { mode: BrewMode }) {
         <div>
           <div className="flex items-center gap-1.5 text-[12px] font-medium">
             <span
-              className="h-1.5 w-1.5 rounded-full"
+              className={`h-1.5 w-1.5 rounded-full ${view === "ready" ? "animate-[pulse_2.8s_ease-in-out_infinite]" : ""}`}
               style={{ backgroundColor: view === "brewing" ? brewingStage.color : isResult ? "#2F6BFF" : "#8291A6" }}
             />
-            {isResult ? "冲煮结果" : view === "ready" ? "准备冲煮" : view === "brewing" ? brewingStage.label : ""}
+            {isResult ? t("brew.result") : view === "ready" ? t("brew.ready") : view === "brewing" ? brewingStage.label : ""}
           </div>
           </div>
       </div>
@@ -471,38 +471,38 @@ export function BrewSession({ mode }: { mode: BrewMode }) {
       {/* 结果页顶部：最终重量/总水量、平均流速、总时长、粉水比（粉量已知时） */}
       {isResult && !reviewing && (
         <div className={`mt-2 grid gap-1.5 ${doseKnown ? "grid-cols-4" : "grid-cols-3"}`}>
-          <ResultMetric label="最终重量" value={displayWeight.toFixed(1)} unit="g" />
-          <ResultMetric label="平均流速" value={avgFlow.toFixed(1)} unit="g/s" />
-          <ResultMetric label="总时长" value={formatTime(endSample.time)} />
-          {doseKnown && <ResultMetric label="粉水比" value={`1:${finalRatio.toFixed(1)}`} />}
+          <ResultMetric label={t("brew.finalWeight")} value={displayWeight.toFixed(1)} unit="g" />
+          <ResultMetric label={t("curve.avgFlow")} value={avgFlow.toFixed(1)} unit="g/s" />
+          <ResultMetric label={t("brew.totalDuration")} value={formatTime(endSample.time)} />
+          {doseKnown && <ResultMetric label={t("curve.brewRatio")} value={`1:${finalRatio.toFixed(1)}`} />}
         </div>
       )}
 
       {/* 回看状态顶部：游标时刻数据 */}
       {isResult && reviewing && (
         <div className={`mt-2 grid gap-1.5 ${doseKnown ? "grid-cols-4" : "grid-cols-3"}`}>
-          <ResultMetric label="累计重量" value={displayWeight.toFixed(1)} unit="g" emphasis />
-          <ResultMetric label="该时刻流速" value={displayFlow.toFixed(1)} unit="g/s" />
-          <ResultMetric label="时间" value={formatTime(displayTime)} />
-          {doseKnown && <ResultMetric label="动态粉水比" value={`1:${displayRatio.toFixed(1)}`} />}
+          <ResultMetric label={t("brew.cumulativeWeight")} value={displayWeight.toFixed(1)} unit="g" emphasis />
+          <ResultMetric label={t("brew.cursorFlow")} value={displayFlow.toFixed(1)} unit="g/s" />
+          <ResultMetric label={t("curve.time")} value={formatTime(displayTime)} />
+          {doseKnown && <ResultMetric label={t("brew.dynamicRatio")} value={`1:${displayRatio.toFixed(1)}`} />}
         </div>
       )}
 
       {/* 冲煮中顶部：重量(g) / 流速(g/s) / 时间(mm:ss) */}
       {view === "brewing" && (
         <div className="mt-2 grid grid-cols-3 gap-1.5">
-          <ResultMetric label="重量" value={timer.weight.toFixed(1)} unit="g" emphasis />
-          <ResultMetric label="流速" value={timer.flowRate.toFixed(1)} unit="g/s" />
-          <ResultMetric label="时间" value={formatTime(timer.time)} />
+          <ResultMetric label={t("curve.weight")} value={timer.weight.toFixed(1)} unit="g" emphasis />
+          <ResultMetric label={t("curve.realtimeFlow")} value={timer.flowRate.toFixed(1)} unit="g/s" />
+          <ResultMetric label={t("curve.time")} value={formatTime(timer.time)} />
         </div>
       )}
 
       {/* 准备中顶部 */}
       {view === "ready" && (
         <div className="mt-2 grid grid-cols-3 gap-1.5">
-          <ResultMetric label="重量" value={timer.weight.toFixed(1)} unit="g" emphasis />
-          <ResultMetric label="流速" value="0.0" unit="g/s" />
-          <ResultMetric label="时间" value="00:00" />
+          <ResultMetric label={t("curve.weight")} value={timer.weight.toFixed(1)} unit="g" emphasis />
+          <ResultMetric label={t("curve.realtimeFlow")} value="0.0" unit="g/s" />
+          <ResultMetric label={t("curve.time")} value="00:00" />
         </div>
       )}
 
@@ -522,7 +522,7 @@ export function BrewSession({ mode }: { mode: BrewMode }) {
 
       {isResult && (
         <div className="mt-1.5 flex h-4 flex-none items-center justify-center text-[9px] font-medium tracking-wide text-[#8291A6]">
-          按旋钮继续
+          {t("brew.pressKnobContinue")}
         </div>
       )}
 
@@ -532,12 +532,12 @@ export function BrewSession({ mode }: { mode: BrewMode }) {
           <div className="min-w-0">
             {view === "ready" ? (
               <>
-                <div className="truncate text-[10px] font-medium text-[#DCE5F1]">
+                <div className="truncate text-[10px] font-medium text-[#8291A6]">
                   {isTared
                     ? settings.autoTimer
-                      ? "注水即开始"
-                      : "按计时键开始"
-                    : "单击旋钮去皮"}
+                      ? t("brew.pourToStart")
+                      : t("brew.pressTimerStart")
+                    : t("brew.pressKnobTare")}
                 </div>
               </>
             ) : view === "brewing" ? (
@@ -545,28 +545,28 @@ export function BrewSession({ mode }: { mode: BrewMode }) {
                 <div className={`truncate text-[10px] font-medium ${
                   brewingAlert === "severe" || brewingAlert === "over" ? "text-[#FF4D5E]" : brewingAlert === "near" ? "text-[#FFC247]" : "text-[#27C6A3]"
                 }`}>
-                  {mode === "curve" ? alertText : "按左侧键停止计时"}
+                  {mode === "curve" ? alertText : t("brew.pressLeftStop")}
                 </div>
                 <div className="mt-0.5 text-[8px] text-[#8291A6]">
-                  目标 {targetWeight}g · 已注 {timer.weight.toFixed(1)}g
+                  {t("brew.targetProgress").replace("{target}", String(targetWeight)).replace("{actual}", timer.weight.toFixed(1))}
                 </div>
               </>
             ) : reviewing ? (
               <>
                 <div className="truncate text-[10px] font-medium text-[#DCE5F1]">
-                  旋转旋钮回看曲线 · 每格 1s
+                  {t("brew.reviewEverySecond")}
                 </div>
                 <div className="mt-0.5 text-[8px] text-[#8291A6]">
-                  游标 {formatTime(displayTime)} · 累计 {displayWeight.toFixed(1)}g{doseKnown ? ` · 粉水比 1:${displayRatio.toFixed(1)}` : ""}
+                  {t("brew.cursorSummary").replace("{time}", formatTime(displayTime)).replace("{weight}", displayWeight.toFixed(1))}{doseKnown ? ` · ${t("curve.brewRatio")} 1:${displayRatio.toFixed(1)}` : ""}
                 </div>
               </>
             ) : (
               <>
                 <div className="truncate text-[10px] font-medium text-[#DCE5F1]">
-                  旋转旋钮回看曲线
+                  {t("brew.review")}
                 </div>
                 <div className="mt-0.5 text-[8px] text-[#8291A6]">
-                  总时长 {formatTime(endSample.time)} · 平均流速 {avgFlow.toFixed(1)} g/s{doseKnown ? ` · 粉水比 1:${finalRatio.toFixed(1)}` : ""}
+                  {t("brew.resultSummary").replace("{time}", formatTime(endSample.time)).replace("{flow}", avgFlow.toFixed(1))}{doseKnown ? ` · ${t("curve.brewRatio")} 1:${finalRatio.toFixed(1)}` : ""}
                 </div>
               </>
             )}
@@ -590,8 +590,9 @@ function ResultMetric({ label, value, unit, emphasis }: { label: string; value: 
 }
 
 function BrewStageIndicator({ activeStage, labels }: { activeStage: number; labels: string[] }) {
+  const { t } = useT();
   return (
-    <div className="mx-auto mt-2 flex w-full max-w-[132px] items-center gap-1.5" aria-label={`当前冲煮阶段：${labels[activeStage]}`}>
+    <div className="mx-auto mt-2 flex w-full max-w-[132px] items-center gap-1.5" aria-label={t("brew.stageAria").replace("{stage}", labels[activeStage])}>
       {labels.map((label, index) => {
         const lit = index <= activeStage;
         return (
@@ -624,6 +625,7 @@ function CurveGraph({ actual, currentTime, endTime, targetAt, targetDuration, ma
   showReadyTargetPreview?: boolean;
   alert?: "normal" | "near" | "over" | "severe";
 }) {
+  const { t } = useT();
   const width = 320;
   const height = 112;
   const tEnd = endTime ?? currentTime;
@@ -734,10 +736,10 @@ function CurveGraph({ actual, currentTime, endTime, targetAt, targetDuration, ma
   return (
     <div className="curve-glass relative mt-2 min-h-0 flex-1 overflow-hidden rounded-[13px]">
       <div className="absolute left-2.5 top-2 z-10 flex items-center gap-3 text-[7px] uppercase tracking-[0.14em] text-[#8291A6]">
-        {showTarget && targetAt && <span className="flex items-center gap-1"><i className="h-px w-3 bg-[#F2F5F8]" />目标</span>}
-        <span className="flex items-center gap-1"><i className="h-px w-3" style={{ backgroundColor: actualColor }} />实际</span>
+        {showTarget && targetAt && <span className="flex items-center gap-1"><i className="h-px w-3 bg-[#F2F5F8]" />{t("curve.target")}</span>}
+        <span className="flex items-center gap-1"><i className="h-px w-3" style={{ backgroundColor: actualColor }} />{t("curve.actual")}</span>
       </div>
-      <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-label="冲煮曲线">
+      <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-label={t("brew.graphAria")}>
         <defs>
           <linearGradient id={glowId} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2={width} y2="0">
             <stop offset="0" stopColor={actualColor} stopOpacity="0.9" />
