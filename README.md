@@ -10,7 +10,8 @@
 <img width="1346" height="819" alt="image" src="https://github.com/user-attachments/assets/be7c6cf6-1b3f-481f-965f-3c7d828dd55c" />
 
 # 意式模式界面
-<img width="1346" height="819" alt="image" src="https://github.com/user-attachments/assets/9154b60b-7d36-4f40-81c0-f62ef7c3b60e" />
+<img width="1390" height="819" alt="image" src="https://github.com/user-attachments/assets/7a75e4e5-2347-4cee-9452-efe03c862c08" />
+
 
 # UI交互逻辑图
 <img width="6870" height="4828" alt="image" src="https://github.com/user-attachments/assets/eaf84cbc-072f-4f5b-9652-f7c16b251533" />
