@@ -28,9 +28,5 @@
 
 - 旋钮：在称重主页面/冲煮准备状态单击去皮，正式冲煮开始后自动锁定去皮功能，避免误操作导致重量归零，在菜单中单击确认，旋转用于选择/调整/结果游标，长按2秒开机或关机；不支持用户自定义。
 
-  ## Running the code
 
-  Run `npm i` to install the dependencies.
-
-  Run `npm run dev` to start the development server.
   
