@@ -61,6 +61,9 @@ interface HardwareContextType {
   // Battery
   batteryLevel: number;
   isCharging: boolean;
+  isChargeComplete: boolean;
+  chargingDisplayVisible: boolean;
+  wakeChargingDisplay: () => boolean;
   startCharging: () => void;
   stopCharging: () => void;
   setBatteryLevel: (level: number) => void;
@@ -106,7 +109,33 @@ export function HardwareProvider({ children }: { children: ReactNode }) {
   // 电池状态
   const [batteryLevel, setBatteryLevel] = useState(100);
   const [isCharging, setIsCharging] = useState(false);
+  const [chargingDisplayVisible, setChargingDisplayVisible] = useState(false);
+  const chargingDisplayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const batteryChargerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isChargeComplete = isCharging && batteryLevel >= 100;
+
+  const showChargingDisplayForFiveSeconds = useCallback(() => {
+    if (chargingDisplayTimerRef.current) {
+      window.clearTimeout(chargingDisplayTimerRef.current);
+    }
+    setChargingDisplayVisible(true);
+    chargingDisplayTimerRef.current = window.setTimeout(() => {
+      setChargingDisplayVisible(false);
+      chargingDisplayTimerRef.current = null;
+    }, 5000);
+  }, []);
+
+  const wakeChargingDisplay = useCallback(() => {
+    if (isPowered || !isCharging) return false;
+    showChargingDisplayForFiveSeconds();
+    return true;
+  }, [isCharging, isPowered, showChargingDisplayForFiveSeconds]);
+
+  useEffect(() => () => {
+    if (chargingDisplayTimerRef.current) {
+      window.clearTimeout(chargingDisplayTimerRef.current);
+    }
+  }, []);
 
   const startTimer = useCallback(() => {
     setTimer((prev) => ({ ...prev, isRunning: true }));
@@ -291,6 +320,7 @@ export function HardwareProvider({ children }: { children: ReactNode }) {
 
   const powerOff = useCallback(() => {
     setIsPowered(false);
+    if (isCharging) showChargingDisplayForFiveSeconds();
     setShutdownCountdown(null);
     setOverload(false);
     setOverloadBuzzing(false);
@@ -305,7 +335,7 @@ export function HardwareProvider({ children }: { children: ReactNode }) {
     lastWeightTimeRef.current = Date.now();
     navigate("/");
     resetTimer();
-  }, [navigate, resetTimer]);
+  }, [isCharging, navigate, resetTimer, showChargingDisplayForFiveSeconds]);
 
   const togglePower = useCallback(() => {
     if (isPowered) {
@@ -313,6 +343,11 @@ export function HardwareProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    if (chargingDisplayTimerRef.current) {
+      window.clearTimeout(chargingDisplayTimerRef.current);
+      chargingDisplayTimerRef.current = null;
+    }
+    setChargingDisplayVisible(false);
     setIsPowered(true);
 
     // 开机时若秤体已超载（实际总载荷 > 2000g），立即进入过载提示
@@ -409,6 +444,7 @@ export function HardwareProvider({ children }: { children: ReactNode }) {
   const startCharging = useCallback(() => {
     if (isCharging) return;
     setIsCharging(true);
+    if (!isPowered) showChargingDisplayForFiveSeconds();
     // 清除旧的充电定时器
     if (batteryChargerRef.current) window.clearInterval(batteryChargerRef.current);
     // 每秒充 3%，满电自动停止
@@ -416,7 +452,6 @@ export function HardwareProvider({ children }: { children: ReactNode }) {
       setBatteryLevel((prev) => {
         const next = Math.min(100, prev + 3);
         if (next >= 100) {
-          setIsCharging(false);
           if (batteryChargerRef.current) {
             window.clearInterval(batteryChargerRef.current);
             batteryChargerRef.current = null;
@@ -425,10 +460,15 @@ export function HardwareProvider({ children }: { children: ReactNode }) {
         return next;
       });
     }, 1000);
-  }, [isCharging]);
+  }, [isCharging, isPowered, showChargingDisplayForFiveSeconds]);
 
   const stopCharging = useCallback(() => {
     setIsCharging(false);
+    setChargingDisplayVisible(false);
+    if (chargingDisplayTimerRef.current) {
+      window.clearTimeout(chargingDisplayTimerRef.current);
+      chargingDisplayTimerRef.current = null;
+    }
     if (batteryChargerRef.current) {
       window.clearInterval(batteryChargerRef.current);
       batteryChargerRef.current = null;
@@ -547,6 +587,9 @@ export function HardwareProvider({ children }: { children: ReactNode }) {
         startUpdate,
         batteryLevel,
         isCharging,
+        isChargeComplete,
+        chargingDisplayVisible,
+        wakeChargingDisplay,
         startCharging,
         stopCharging,
         setBatteryLevel,

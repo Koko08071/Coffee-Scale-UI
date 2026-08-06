@@ -35,12 +35,16 @@ export function SimpleSettings() {
     { label: t("brightness.ultra"), pos: 1, value: 100 },
   ];
 
-  const config = configs[location.pathname] ?? { title: t("settings.menu.settings"), message: "此功能将在硬件联调后开放" };
+  const config = configs[location.pathname] ?? { title: t("settings.menu.settings"), message: t("settings.menu.comingSoon") };
   const currentValue = config.settingKey ? settings[config.settingKey] : undefined;
+  const getOptionLabel = (option: string) =>
+    location.pathname === "/settings/auto-off" && option === "Never"
+      ? t("settings.autoOff.never")
+      : option;
 
   useEffect(() => {
     if (location.pathname === "/settings/factory-reset") {
-      setSelected(0);
+      setSelected(1);
       return;
     }
     const index = config.options?.findIndex((option) => option === currentValue) ?? -1;
@@ -75,8 +79,8 @@ export function SimpleSettings() {
       }
       if (detail?.type !== "knob-single-click") return;
       if (location.pathname === "/settings/factory-reset") {
-        if (selected === 0) navigate("/settings");
-        else { resetSettings(); restart(); }
+        if (selected === 0) { resetSettings(); restart(); }
+        else navigate("/settings");
       } else if (config.options?.length && config.settingKey && selected >= 0) {
         updateSetting(config.settingKey, config.options[selected] as never);
       } else if (location.pathname === "/settings/sound") updateSetting("sound", !settings.sound);
@@ -108,7 +112,6 @@ export function SimpleSettings() {
           <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${settings.sound ? "translate-x-6" : "translate-x-1"}`} />
         </button>
         <div className="mt-3 text-[11px] text-slate-400">{settings.sound ? t("settings.menu.soundOn") : t("settings.menu.soundOff")}</div>
-        <p className="mt-3 text-[10px] text-slate-500 tracking-wide">{t("settings.menu.overloadNotAffected")}</p>
       </div>
     );
   }
@@ -125,7 +128,6 @@ export function SimpleSettings() {
           <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${settings.autoTimer ? "translate-x-6" : "translate-x-1"}`} />
         </button>
         <div className="mt-3 text-[11px] text-slate-400">{settings.autoTimer ? t("settings.menu.autoTimerOn") : t("settings.menu.autoTimerOff")}</div>
-        <p className="mt-3 text-[10px] text-slate-500 tracking-wide">{t("settings.menu.autoTimerDesc")}</p>
       </div>
     );
   }
@@ -138,24 +140,21 @@ export function SimpleSettings() {
             <RefreshCcw className="h-9 w-9 text-amber-300" strokeWidth={1.5} />
           </div>
           <h2 className="mt-6 text-[17px] font-medium text-white tracking-tight">{t("settings.menu.factoryReset")}</h2>
-          <p className="mt-3 max-w-xs text-[12px] leading-relaxed text-slate-400">
-            {t("settings.menu.factoryResetWarn")}
-          </p>
         </div>
         <div className="flex gap-3 border-t border-white/[0.06] px-5 py-4">
           <button
             type="button"
-            onClick={() => navigate("/settings")}
-            className={`linear-secondary flex-1 py-2.5 text-[13px] transition-all ${selected === 0 ? "ring-2 ring-blue-300" : ""}`}
+            onClick={() => { resetSettings(); restart(); }}
+            className={`flex-1 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 py-2.5 text-[13px] font-semibold text-white shadow-[0_4px_16px_rgba(251,191,36,.25)] active:scale-[0.97] transition-all ${selected === 0 ? "ring-2 ring-white/60" : ""}`}
           >
-            {t("common.cancel")}
+            {t("settings.menu.confirmReset")}
           </button>
           <button
             type="button"
-            onClick={() => { resetSettings(); restart(); }}
-            className={`flex-1 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 py-2.5 text-[13px] font-semibold text-white shadow-[0_4px_16px_rgba(251,191,36,.25)] active:scale-[0.97] transition-all ${selected === 1 ? "ring-2 ring-white/60" : ""}`}
+            onClick={() => navigate("/settings")}
+            className={`linear-secondary flex-1 py-2.5 text-[13px] transition-all ${selected === 1 ? "ring-2 ring-blue-300" : ""}`}
           >
-            {t("settings.menu.confirmReset")}
+            {t("common.cancel")}
           </button>
         </div>
       </div>
@@ -209,10 +208,6 @@ export function SimpleSettings() {
           </div>
         </div>
 
-        <div className="mt-6 text-[13px] text-slate-400">
-          {t("common.current")}：<span className="text-amber-200 font-medium">{level.label} · {level.value}%</span>
-        </div>
-        <p className="mt-2 text-[10px] text-slate-500 tracking-wide">{t("settings.menu.brightnessAdj")}</p>
       </div>
     );
   }
@@ -231,7 +226,7 @@ export function SimpleSettings() {
     <div className="screen-surface h-full overflow-hidden pt-4">
       <MenuList
         title={config.title}
-        items={config.options.map((option) => ({ label: option, info: currentValue === option ? t("common.current") : undefined }))}
+        items={config.options.map((option) => ({ label: getOptionLabel(option), info: currentValue === option ? t("common.current") : undefined }))}
         selectedIndex={selected}
         onSelect={(idx) => { setSelected(idx); const opt = config.options![idx]; updateSetting(config.settingKey!, opt as never); }}
         onMove={setSelected}

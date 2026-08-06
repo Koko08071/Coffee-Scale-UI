@@ -4,6 +4,7 @@ import { CurveSource, useSettings, type BrewCurve } from "../SettingsContext";
 import { MenuList, MenuItem } from "../MenuList";
 import { RemoveCurveDialog, type RemoveCurveChoice } from "../RemoveCurveDialog";
 import { useT } from "../../i18n/I18nContext";
+import { localizeCurveName } from "../../i18n/curveNames";
 import { Archive, Layers, Award, Clock3, Compass, List, Trash2, AlertTriangle, LineChart } from "lucide-react";
 
 type CategoryDef = { slug: string; label: string; source: CurveSource; icon: typeof Archive };
@@ -60,7 +61,7 @@ function RootCurveSelect({ recommendedId }: { recommendedId: string }) {
 
   return (
     <div className="h-full screen-surface">
-      <MenuList title={t("curve.titleGuide")} subtitle="推荐开始 · 最近使用 · 选择曲线" items={items} selectedIndex={selected} onSelect={(idx) => navigate(paths[idx])} onMove={setSelected} pageSize={3} />
+      <MenuList title={t("curve.titleGuide")} subtitle={t("curve.selectStartHint")} items={items} selectedIndex={selected} onSelect={(idx) => navigate(paths[idx])} onMove={setSelected} pageSize={3} />
     </div>
   );
 }
@@ -103,7 +104,7 @@ function CategoryCurveSelect({ categories }: { categories: CategoryDef[] }) {
 
   return (
     <div className="h-full screen-surface">
-      <MenuList title={t("curve.selectCurve")} subtitle="旋转旋钮选择分类，按下确认" items={items} selectedIndex={selected} onSelect={(idx) => navigate(paths[idx])} onMove={setSelected} pageSize={3} />
+      <MenuList title={t("curve.selectCurve")} subtitle={t("curve.selectCategoryHint")} items={items} selectedIndex={selected} onSelect={(idx) => navigate(paths[idx])} onMove={setSelected} pageSize={3} />
     </div>
   );
 }
@@ -111,7 +112,7 @@ function CategoryCurveSelect({ categories }: { categories: CategoryDef[] }) {
 function CurveListSelect({ category }: { category: CategoryDef }) {
   const navigate = useNavigate();
   const { settings, updateSetting } = useSettings();
-  const { t } = useT();
+  const { t, lang } = useT();
   const [selected, setSelected] = useState(0);
   const [removeMode, setRemoveMode] = useState(false);
   const [pendingCurveId, setPendingCurveId] = useState<string | null>(null);
@@ -124,8 +125,7 @@ function CurveListSelect({ category }: { category: CategoryDef }) {
     if (removeMode) {
       return curves.map((c) => ({
         key: c.id,
-        label: c.name,
-        value: `${c.weight} · ${c.duration}`,
+        label: localizeCurveName(c, lang, t),
         icon: LineChart,
         rightIcon: Trash2,
         rightClassName: "text-red-500",
@@ -136,8 +136,7 @@ function CurveListSelect({ category }: { category: CategoryDef }) {
     }
     const curveItems: MenuItem[] = curves.map((c) => ({
       key: c.id,
-      label: c.name,
-      value: `${c.weight} · ${c.duration}`,
+      label: localizeCurveName(c, lang, t),
       icon: LineChart,
     }));
     const removeItem: MenuItem = {
@@ -148,7 +147,7 @@ function CurveListSelect({ category }: { category: CategoryDef }) {
       danger: true,
     };
     return [...curveItems, removeItem];
-  }, [curves, removeMode, t]);
+  }, [curves, lang, removeMode, t]);
 
   const requestCurveRemoval = useCallback((idx: number) => {
     if (idx < 0 || idx >= curves.length) return;
@@ -227,14 +226,14 @@ function CurveListSelect({ category }: { category: CategoryDef }) {
     };
   }, [cancelCurveRemoval, confirmCurveRemoval, handleSelect, items.length, navigate, pendingCurve, removeChoice, removeMode, selected]);
 
-  const subtitle = removeMode ? t("curve.removeModeHint") : curves.length > 0 ? "旋转旋钮选择曲线，按下确认" : t("curve.emptyCurves");
+  const subtitle = removeMode ? t("curve.removeModeHint") : curves.length > 0 ? t("curve.selectItemHint") : t("curve.emptyCurves");
 
   return (
     <div className="h-full screen-surface overflow-hidden">
       <MenuList title={category.label} subtitle={subtitle} items={items} selectedIndex={selected} onSelect={handleSelect} onMove={setSelected} pageSize={3} />
       <RemoveCurveDialog
         open={Boolean(pendingCurve)}
-        curveName={pendingCurve?.name ?? ""}
+        curveName={pendingCurve ? localizeCurveName(pendingCurve, lang, t) : ""}
         selectedChoice={removeChoice}
         onSelectChoice={setRemoveChoice}
         onCancel={cancelCurveRemoval}

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router";
 import { MenuList } from "../MenuList";
 import { CurveSource, useSettings } from "../SettingsContext";
 import { useT } from "../../i18n/I18nContext";
+import { localizeCurveName } from "../../i18n/curveNames";
 import { showHardwareToast } from "../HardwareToast";
 import { RemoveCurveDialog, type RemoveCurveChoice } from "../RemoveCurveDialog";
 import { LineChart } from "lucide-react";
@@ -10,7 +11,7 @@ import { LineChart } from "lucide-react";
 export function ManageCurves() {
   const navigate = useNavigate();
   const { category } = useParams();
-  const { t } = useT();
+  const { t, lang } = useT();
   const { settings, updateSetting } = useSettings();
   const [selected, setSelected] = useState(-1);
   const [pendingCurveId, setPendingCurveId] = useState<string | null>(null);
@@ -28,8 +29,7 @@ export function ManageCurves() {
 
   const items = curves.map((c) => ({
     key: c.id,
-    label: c.name,
-    info: `${c.weight} · ${c.duration}`,
+    label: localizeCurveName(c, lang, t),
     icon: LineChart,
   }));
 
@@ -123,7 +123,7 @@ export function ManageCurves() {
       </div>
       <RemoveCurveDialog
         open={Boolean(pendingCurve)}
-        curveName={pendingCurve?.name ?? ""}
+        curveName={pendingCurve ? localizeCurveName(pendingCurve, lang, t) : ""}
         selectedChoice={removeChoice}
         onSelectChoice={setRemoveChoice}
         onCancel={cancelDeleteCurve}

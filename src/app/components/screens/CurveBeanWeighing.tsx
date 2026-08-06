@@ -129,39 +129,48 @@ function CoffeeBeanWeighing({ mode }: { mode: WeighMode }) {
   }, [cancel, handleTare, saveWeight]);
 
   return (
-    <div className="screen-surface flex h-full flex-col px-3 pb-3 pt-3 text-[#F5F7FA]">
-      <div className="px-1 text-[12px] font-medium">
-        {t("curve.weigh.title")}
+    <div className="relative h-full overflow-hidden bg-[#050A12] text-[#F5F7FA]">
+      <div
+        className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_50%,rgba(47,107,255,.11),rgba(5,10,18,.22)_38%,rgba(5,10,18,.94)_70%),linear-gradient(180deg,rgba(10,20,34,.06),rgba(5,10,18,.52))]"
+        aria-hidden="true"
+      />
+
+      <div
+        aria-hidden="true"
+        className="absolute left-1/2 top-[49%] h-[205px] w-[310px] -translate-x-1/2 -translate-y-1/2"
+      >
+        <div className="home-weight-orb absolute inset-0 rounded-full" />
+        <div className="home-weight-orb-wave absolute inset-[16%] rounded-full" />
       </div>
 
-      <div className={`relative mt-2 min-h-0 flex-1 overflow-hidden rounded-[20px] border bg-[#050A12]/80 shadow-[inset_0_1px_0_rgba(255,255,255,.045),0_18px_40px_rgba(0,0,0,.2)] ${saved ? "border-emerald-400/25" : saveBlocked || measuredWeight < -0.1 ? "border-amber-400/25" : stable ? "border-blue-400/25" : "border-[#6C8EC5]/15"}`}>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_47%,rgba(47,107,255,.13),transparent_39%),linear-gradient(180deg,rgba(10,20,34,.08),rgba(5,10,18,.55))]" aria-hidden="true" />
-        <span aria-hidden="true" className="absolute left-3 top-3 h-[62px] w-[92px] rounded-tl-[28px] border-l border-t border-[#7FB6EA]/28" />
-        <span aria-hidden="true" className="absolute right-3 top-3 h-[62px] w-[92px] rounded-tr-[28px] border-r border-t border-[#7FB6EA]/28" />
-        <span aria-hidden="true" className="absolute bottom-3 left-3 h-[62px] w-[92px] rounded-bl-[28px] border-b border-l border-[#7FB6EA]/20" />
-        <span aria-hidden="true" className="absolute bottom-3 right-3 h-[62px] w-[92px] rounded-br-[28px] border-b border-r border-[#7FB6EA]/20" />
-
-        <div
-          aria-hidden="true"
-          className="absolute left-1/2 top-[50%] h-[210px] w-[270px] -translate-x-1/2 -translate-y-1/2"
-        >
-          <div className="home-weight-orb absolute inset-0 rounded-full" />
-          <div className="home-weight-orb-wave absolute inset-[16%] rounded-full" />
-        </div>
-
-        <div className="absolute left-1/2 top-[49%] z-20 -translate-x-1/2 -translate-y-1/2 text-center">
-          <div className="relative min-w-[190px] px-8 py-6">
-            <div aria-hidden="true" className="absolute inset-[-18px] rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(5,10,18,.96)_0%,rgba(5,10,18,.78)_45%,rgba(5,10,18,.28)_68%,transparent_78%)] backdrop-blur-[5px]" />
-            <div className="relative flex items-end justify-center font-light tabular-nums tracking-[-0.06em]">
-              <span className={`text-[64px] leading-none ${saved ? "text-[#27C6A3]" : measuredWeight < -0.1 ? "text-[#FFC247]" : "text-[#F5F7FA]"}`} style={{ textShadow: "0 2px 3px rgba(0,0,0,1), 0 0 12px rgba(5,10,18,.95), 0 0 18px rgba(67,199,255,.18)" }}>{measuredWeight.toFixed(1)}</span>
-              <span className="mb-1.5 ml-1.5 text-[12px] tracking-normal text-[#A8C5FF]">g</span>
-            </div>
+      <div className="absolute left-1/2 top-[49%] z-20 -translate-x-1/2 -translate-y-1/2 text-center">
+        <div className="relative min-w-[230px] px-10 py-8">
+          <div
+            aria-hidden="true"
+            className="absolute left-1/2 top-1/2 h-[154px] w-[270px] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-white/[0.14] backdrop-blur-[9px] backdrop-saturate-75"
+            style={{
+              background: [
+                "radial-gradient(ellipse at 34% 24%, rgba(255,255,255,.09) 0%, rgba(255,255,255,.02) 28%, transparent 48%)",
+                "linear-gradient(145deg, rgba(255,255,255,.035) 0%, rgba(255,255,255,.01) 48%, rgba(0,0,0,.1) 100%)",
+              ].join(", "),
+              boxShadow:
+                "inset 0 1px 0 rgba(255,255,255,.2), inset -12px -14px 26px rgba(0,0,0,.08), 0 12px 34px rgba(0,0,0,.12)",
+            }}
+          />
+          <div className="relative flex items-end justify-center font-light tabular-nums tracking-[-0.06em]">
+            <span
+              className={`text-[76px] leading-none ${saved ? "text-[#27C6A3]" : saveBlocked || measuredWeight < -0.1 ? "text-[#FFC247]" : "text-[#F5F7FA]"}`}
+              style={{ textShadow: "0 2px 4px rgba(0,0,0,.74), 0 0 12px rgba(5,10,18,.72), 0 0 18px rgba(67,199,255,.14)" }}
+            >
+              {measuredWeight.toFixed(1)}
+            </span>
+            <span className="mb-2 ml-2 text-[14px] tracking-normal text-[#A8C5FF]">g</span>
           </div>
         </div>
+      </div>
 
-        <div className="absolute bottom-5 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap text-center text-[8px] tracking-wide text-[#8291A6]">
-          {t("curve.weigh.freeHint")}
-        </div>
+      <div className="absolute bottom-[5%] left-1/2 z-20 -translate-x-1/2 whitespace-nowrap text-center text-[9px] tracking-wide text-[#8291A6]">
+        {t("curve.weigh.freeHint")}
       </div>
     </div>
   );

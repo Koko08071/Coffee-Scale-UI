@@ -16,7 +16,7 @@ export function Root() {
     <SettingsProvider>
       <I18nWrapper>
         <HardwareProvider>
-      <div className="app-stage h-full flex items-start justify-center pt-3 pb-2 px-2 lg:pt-4 lg:pb-3 lg:px-4">
+      <div className="h-full w-full">
         <CoffeeScaleSimulator>
           <Outlet />
         </CoffeeScaleSimulator>

@@ -2,12 +2,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, Gauge } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useHardware } from "../HardwareContext";
+import { useT } from "../../i18n/I18nContext";
 
 type Phase = "place" | "calibrating" | "done" | "error";
 
 export function OneKeyCalibration() {
   const navigate = useNavigate();
   const { timer } = useHardware();
+  const { t } = useT();
   const [phase, setPhase] = useState<Phase>("place");
   const [progress, setProgress] = useState(0);
   const phaseRef = useRef(phase);
@@ -85,7 +87,7 @@ export function OneKeyCalibration() {
 
       <div className="mt-4 screen-kicker">Precision calibration</div>
       <h1 className="mt-1.5 text-[18px] font-semibold tracking-tight">
-        {phase === "place" ? "请放上 100g 校准砝码" : phase === "calibrating" ? "校准中" : phase === "done" ? "校准完成" : "未检测到 100g 砝码"}
+        {phase === "place" ? t("calib.placeWeight") : phase === "calibrating" ? t("calib.calibrating") : phase === "done" ? t("calib.complete") : t("calib.error")}
       </h1>
       {phase === "calibrating" && (
         <div className="mt-5 w-[220px]">

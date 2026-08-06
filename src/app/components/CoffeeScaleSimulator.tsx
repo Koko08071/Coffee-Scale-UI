@@ -7,6 +7,8 @@ import { HardwareToast } from "./HardwareToast";
 import { useHardware } from "./HardwareContext";
 import { showHardwareToast } from "./HardwareToast";
 import { useT } from "../i18n/I18nContext";
+import { translations, type TranslationKey } from "../i18n/translations";
+import { ChargingDisplay } from "./ChargingDisplay";
 
 type BrewFeedbackState = "normal" | "near" | "over" | "severe";
 
@@ -214,6 +216,9 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
     handleXKeyPress,
     batteryLevel,
     isCharging,
+    isChargeComplete,
+    chargingDisplayVisible,
+    wakeChargingDisplay,
     startCharging,
     stopCharging,
     setTareWeight,
@@ -225,26 +230,49 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
   } = useHardware();
 
   const { settings, updateSetting } = useSettings();
-  const { t } = useT();
+  const { t, lang } = useT();
+  const chromeT = useCallback(
+    (key: TranslationKey) => translations.zh[key] ?? key,
+    [],
+  );
 
   // 根据浏览器视口自动缩放设备模拟器，防止在较矮的预览窗口中被截断
+  const simulatorRef = useRef<HTMLDivElement>(null);
   const [deviceScale, setDeviceScale] = useState(1);
   useEffect(() => {
+    let frame = 0;
     const updateScale = () => {
-      const paddingX = 8;
-      const paddingY = 12;
-      const availableW = window.innerWidth - paddingX;
-      const availableH = window.innerHeight - paddingY;
-      const nextScale = Math.min(
-        1.08,
-        Math.max(0.65, availableW / 1180),
-        Math.max(0.65, availableH / 610),
-      );
-      setDeviceScale(nextScale);
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const simulator = simulatorRef.current;
+        if (!simulator) return;
+
+        const gutter = window.innerWidth < 700 ? 10 : 20;
+        const availableW = Math.max(240, window.innerWidth - gutter * 2);
+        const availableH = Math.max(240, window.innerHeight - gutter * 2);
+        const baseW = simulator.offsetWidth;
+        const baseH = simulator.offsetHeight;
+        if (!baseW || !baseH) return;
+
+        const nextScale = Math.min(
+          1.75,
+          availableW / baseW,
+          availableH / baseH,
+        );
+        setDeviceScale(Math.max(0.32, nextScale));
+      });
     };
+
     updateScale();
     window.addEventListener("resize", updateScale);
-    return () => window.removeEventListener("resize", updateScale);
+    const observer = new ResizeObserver(updateScale);
+    if (simulatorRef.current) observer.observe(simulatorRef.current);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener("resize", updateScale);
+    };
   }, []);
 
   const [absoluteWeight, setAbsoluteWeight] = useState(0);
@@ -372,7 +400,7 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
         case "knob-single-click":
           if (isHome) {
             tare();
-            showHardwareToast(t("sim.tare"), "info");
+            showHardwareToast(chromeT("sim.tare"), "info");
           }
           break;
         // 主页旋钮旋转：不做重量调整，由各页面/菜单自行处理
@@ -380,19 +408,19 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
     };
     window.addEventListener("hardware-action", handleAction);
     return () => window.removeEventListener("hardware-action", handleAction);
-  }, [isHome, tare, overload, t]);
+  }, [isHome, tare, overload, chromeT]);
 
   // 快捷键
   useEffect(() => {
     if (overload) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "t" || e.key === "T") { e.preventDefault(); tare(); showHardwareToast(t("sim.tare"), "info"); return; }
+      if (e.key === "t" || e.key === "T") { e.preventDefault(); tare(); showHardwareToast(chromeT("sim.tare"), "info"); return; }
       if (e.key === " " || e.key === "Spacebar") {
         e.preventDefault();
         if (isBeanWeighing) dispatchSimulatorAction("bean-weigh-save");
         else if (isBrewSession) dispatchSimulatorAction("brew-timer-press");
-        else if (!timer.isRunning) { startTimer(); showHardwareToast(t("sim.timerStarted"), "success"); }
-        else { pauseTimer(); showHardwareToast(t("sim.timerPaused"), "warning"); }
+        else if (!timer.isRunning) { startTimer(); showHardwareToast(chromeT("sim.timerStarted"), "success"); }
+        else { pauseTimer(); showHardwareToast(chromeT("sim.timerPaused"), "warning"); }
         return;
       }
       if (e.key === "ArrowUp") { e.preventDefault(); syncWeight(absoluteWeight + 0.5); return; }
@@ -401,14 +429,14 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
         e.preventDefault();
         if (isBeanWeighing) return;
         resetTimeOnly();
-        showHardwareToast(t("sim.timerCleared"), "info");
+        showHardwareToast(chromeT("sim.timerCleared"), "info");
         return;
       }
-      if (e.key === "r" || e.key === "R") { e.preventDefault(); resetTimer(); showHardwareToast(t("sim.timerCleared"), "info"); return; }
+      if (e.key === "r" || e.key === "R") { e.preventDefault(); resetTimer(); showHardwareToast(chromeT("sim.timerCleared"), "info"); return; }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [timer.isRunning, absoluteWeight, syncWeight, tare, startTimer, pauseTimer, resetTimer, resetTimeOnly, overload, t, isBeanWeighing, isBrewSession]);
+  }, [timer.isRunning, absoluteWeight, syncWeight, tare, startTimer, pauseTimer, resetTimer, resetTimeOnly, overload, chromeT, isBeanWeighing, isBrewSession]);
 
   const [rightPressed, setRightPressed] = useState(false);
   const [brewFeedbackState, setBrewFeedbackState] = useState<BrewFeedbackState>("normal");
@@ -429,6 +457,8 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
   }, [isBrewSession]);
 
   const handleRightUp = () => {
+    if (wakeChargingDisplay()) return;
+    if (!isPowered) return;
     if (shutdownCountdown !== null) { cancelShutdown(); return; }
     if (isHome) navigate("/menu");
     else dispatchSimulatorAction("navigate-back");
@@ -437,6 +467,7 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
   // 左侧计时键：日常称重短按开始/暂停，冲煮记录短按开始/结束；
   // 称量页短按保存，长按仅抑制保存，不执行计时清零。
   const handleTimerDown = () => {
+    if (!isPowered) return;
     if (overload || shutdownCountdown !== null) return;
     timerLongTriggered.current = false;
     if (isBeanWeighing) {
@@ -448,16 +479,18 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
     timerLongRef.current = setTimeout(() => {
       timerLongTriggered.current = true;
       resetTimeOnly();
-      showHardwareToast(t("sim.timerCleared"), "info");
+      showHardwareToast(chromeT("sim.timerCleared"), "info");
     }, 1500);
   };
 
   const handleTimerUp = () => {
     if (timerLongRef.current) clearTimeout(timerLongRef.current);
     timerLongRef.current = null;
+    if (wakeChargingDisplay()) return;
+    if (!isPowered) return;
     if (timerLongTriggered.current) return;
     if (overload) return;
-    if (shutdownCountdown !== null) { cancelShutdown(); showHardwareToast("已取消关机", "success"); return; }
+    if (shutdownCountdown !== null) { cancelShutdown(); showHardwareToast(chromeT("power.cancelledShutdown"), "success"); return; }
     if (isBeanWeighing) {
       dispatchSimulatorAction("bean-weigh-save");
       return;
@@ -467,9 +500,9 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
       return;
     }
     if (!timer.isRunning) {
-      startTimer(); showHardwareToast(t("sim.timerStarted"), "success");
+      startTimer(); showHardwareToast(chromeT("sim.timerStarted"), "success");
     } else {
-      pauseTimer(); showHardwareToast(t("sim.timerPaused"), "warning");
+      pauseTimer(); showHardwareToast(chromeT("sim.timerPaused"), "warning");
     }
   };
 
@@ -542,8 +575,12 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="app-stage relative flex h-full flex-col items-start justify-start gap-3 pt-4 select-none">
-      <div className="flex items-center gap-2" style={{ zoom: deviceScale }}>
+    <div className="app-stage relative h-full w-full overflow-hidden select-none">
+      <div
+        ref={simulatorRef}
+        className="simulator-layout absolute left-1/2 top-1/2 flex items-center gap-3"
+        style={{ transform: `translate(-50%, -50%) scale(${deviceScale})` }}
+      >
         <div className="device-shell relative">
         {/* 顶部标题栏 */}
         <div className="mb-3 flex items-center justify-between px-1">
@@ -573,6 +610,21 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
               <span className="text-[9px] tabular-nums text-slate-400 min-w-[18px] text-center">{Math.round(batteryLevel)}%</span>
               <button onClick={() => setBatteryLevel(Math.min(100, batteryLevel + 5))} className="flex h-4 w-4 items-center justify-center rounded text-[8px] text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors">+</button>
             </div>
+            {/* 语言预览切换：与秤端设置使用同一份状态 */}
+            <button
+              type="button"
+              onClick={() => updateSetting("language", lang === "zh" ? "English" : "简体中文")}
+              aria-label={chromeT("lang.toggle")}
+              title={chromeT("lang.toggle")}
+              className="flex items-center gap-0.5 rounded-full border border-white/[0.08] bg-white/[0.03] p-0.5 transition-colors hover:border-[#2F6BFF]/45 hover:bg-[#2F6BFF]/[0.06] active:scale-[0.97]"
+            >
+              <span className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[8px] transition-colors ${lang === "zh" ? "bg-[#2F6BFF] text-white" : "text-slate-500"}`}>
+                中
+              </span>
+              <span className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[8px] transition-colors ${lang === "en" ? "bg-[#2F6BFF] text-white" : "text-slate-500"}`}>
+                EN
+              </span>
+            </button>
           </div>
         </div>
 
@@ -593,7 +645,7 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
               <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl hover:bg-white/[0.06] hover:border-blue-500/30 transition-all active:scale-95">
                 <Clock className="h-6 w-6 text-blue-300" />
               </div>
-              <span className={`text-[9px] tracking-wider ${isBeanWeighing ? "text-blue-300" : "text-slate-500"}`}>{isBeanWeighing ? "保存" : "计时"}</span>
+              <span className={`text-[9px] tracking-wider ${isBeanWeighing ? "text-blue-300" : "text-slate-500"}`}>{isBeanWeighing ? chromeT("common.save") : chromeT("home.timer")}</span>
             </button>
           </div>
 
@@ -602,19 +654,20 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
             {shutdownCountdown !== null && (
               <div className="absolute inset-0 z-60 flex flex-col items-center justify-center gap-3 bg-black/90 backdrop-blur-xl">
                 <RotateCcw className="h-8 w-8 text-red-400 animate-spin" />
-                <p className="text-sm text-slate-300">设备关闭中...</p>
-                <p className="text-[10px] text-slate-500">再次按下任意物理按键取消关机</p>
+                <p className="text-sm text-slate-300">{t("power.shuttingDown")}</p>
+                <p className="text-[10px] text-slate-500">{t("sim.cancelShutdownAny")}</p>
               </div>
             )}
 
             {/* 过载状态：保留页面与计时，仅标识锁定显示 */}
             {overload && (
               <div className={`absolute left-2 top-2 z-30 rounded-md border border-red-400/50 bg-red-950/85 px-2 py-1 text-[8px] font-semibold tracking-[0.12em] text-red-200 transition-opacity ${buzzPhase ? "opacity-100" : "opacity-75"}`}>
-                OVERLOAD · 2000g
+                {chromeT("home.overload").toUpperCase()} · 2,000 g
               </div>
             )}
 
             {/* 屏幕内状态栏：电量 */}
+            {isPowered && (
             <div className="absolute top-1 right-2 z-20 flex items-center gap-1.5">
               <div className={`h-3 w-6 rounded-[4px] border relative overflow-hidden ${isCharging ? "border-[#27C6A3]/60 bg-[#27C6A3]/10" : batteryLevel > 20 ? "border-[#27C6A3]/40 bg-[#27C6A3]/10" : "border-[#FF4D5E]/40 bg-[#FF4D5E]/10"}`}>
                 <div
@@ -625,14 +678,15 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
               </div>
               <span className="text-[10px] tabular-nums text-slate-400">{Math.round(batteryLevel)}%</span>
             </div>
+            )}
 
             <div className="relative flex-1 overflow-hidden" style={{ zoom: 1.5 }}>
               {!isPowered ? (
-                <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/90">
-                  <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500/10 to-blue-700/10 border border-blue-500/20 flex items-center justify-center">
-                    <div className="h-3 w-3 rounded-full bg-blue-400 shadow-[0_0_20px_rgba(47,107,255,.6)] animate-pulse-slow" />
-                  </div>
-                </div>
+                isCharging && chargingDisplayVisible ? (
+                  <ChargingDisplay batteryLevel={batteryLevel} isComplete={isChargeComplete} />
+                ) : (
+                  <div className="absolute inset-0 z-30 bg-black" aria-label="screen off" />
+                )
               ) : (
                 children
               )}
@@ -677,7 +731,7 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
               }`}>
                 <Menu className="relative z-[1] h-6 w-6 text-blue-300" />
               </div>
-              <span className="text-[9px] text-slate-500 tracking-wider">菜单/返回</span>
+              <span className="text-[9px] text-slate-500 tracking-wider">{chromeT("menu.return")}</span>
             </button>
 
             {/* 旋钮 */}
@@ -687,11 +741,13 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={() => {
+                if (wakeChargingDisplay()) return;
+                if (!isPowered) return;
                 if (!overload && !timer.isRunning && location.pathname !== "/calibration") {
                   handleXKeyPress();
-                  showHardwareToast("X 快捷启动", "success");
+                  showHardwareToast(chromeT("sim.xStarted"), "success");
                 } else {
-                  showHardwareToast("当前不可使用快捷键", "warning");
+                  showHardwareToast(chromeT("sim.xUnavailable"), "warning");
                 }
               }}
               className={`flex h-14 w-14 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl text-base font-semibold transition-all hover:border-blue-500/30 hover:bg-white/[0.06] active:scale-95 ${
@@ -719,7 +775,7 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
               event.stopPropagation();
               adjustBeanWeight(event.deltaY < 0 ? 1 : -1);
             }}
-            title="放上咖啡豆后，滚动鼠标调节重量"
+            title={chromeT("sim.beansAdjustHint")}
             className={`flex flex-col items-center gap-1 ${overload ? "opacity-30" : ""}`}
           >
             <div className={`flex h-11 w-11 items-center justify-center rounded-xl border transition-all active:scale-95 ${
@@ -729,7 +785,7 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
             }`}>
               <Bean15gIcon className={`h-5 w-5 ${items.beans15 ? "opacity-60" : ""}`} />
             </div>
-            <span className={`text-[9px] tracking-wider ${items.beans15 ? "text-slate-500" : "text-amber-300"}`}>{beanWeight}g咖啡豆</span>
+            <span className={`text-[9px] tracking-wider ${items.beans15 ? "text-slate-500" : "text-amber-300"}`}>{beanWeight} g {chromeT("sim.coffeeBeans")}</span>
           </button>
 
           {/* 2. 100g 滤杯 */}
@@ -745,7 +801,7 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
             }`}>
               <FilterCup100gIcon className={`h-5 w-5 ${items.filterCup100 ? "opacity-60" : ""}`} />
             </div>
-            <span className={`text-[9px] tracking-wider ${items.filterCup100 ? "text-slate-500" : "text-orange-300"}`}>100g滤杯</span>
+            <span className={`text-[9px] tracking-wider ${items.filterCup100 ? "text-slate-500" : "text-orange-300"}`}>{chromeT("sim.filterCup100")}</span>
           </button>
 
           {/* 3. 100g 校准砝码 */}
@@ -761,7 +817,7 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
             }`}>
               <Weight100gIcon className={`h-5 w-5 ${items.calib100 ? "opacity-60" : ""}`} />
             </div>
-            <span className={`text-[9px] tracking-wider ${items.calib100 ? "text-slate-500" : "text-slate-300"}`}>100g校准砝码</span>
+            <span className={`text-[9px] tracking-wider ${items.calib100 ? "text-slate-500" : "text-slate-300"}`}>{chromeT("sim.calibrationWeight100")}</span>
           </button>
 
           {/* 4. 2001g 红色砝码 */}
@@ -777,7 +833,7 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
             }`}>
               <Weight2001gIcon className={`h-5 w-5 ${items.red2001 ? "opacity-60" : ""}`} />
             </div>
-            <span className={`text-[9px] tracking-wider ${items.red2001 ? "text-slate-500" : "text-red-300"}`}>2001g红色砝码</span>
+            <span className={`text-[9px] tracking-wider ${items.red2001 ? "text-slate-500" : "text-red-300"}`}>{chromeT("sim.redWeight2001")}</span>
           </button>
 
           {/* 5. 1901g 砝码 */}
@@ -793,7 +849,7 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
             }`}>
               <Weight1901gIcon className={`h-5 w-5 ${items.weight1901 ? "opacity-60" : ""}`} />
             </div>
-            <span className={`text-[9px] tracking-wider ${items.weight1901 ? "text-slate-500" : "text-zinc-300"}`}>1901g砝码</span>
+            <span className={`text-[9px] tracking-wider ${items.weight1901 ? "text-slate-500" : "text-zinc-300"}`}>{chromeT("sim.weight1901")}</span>
           </button>
 
             {/* 6. 注水 */}
@@ -815,7 +871,7 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
                 <PourIcon className={`h-5 w-5 ${isPouring ? "opacity-60" : ""}`} />
               </div>
               <span className={`text-[9px] tracking-wider ${isPouring ? "text-slate-500" : "text-blue-300"}`}>
-                {isPouring ? `${pourRate.toFixed(1)}g/s` : "液体"}
+                {isPouring ? `${pourRate.toFixed(1)} g/s` : chromeT("sim.liquid")}
               </span>
             </button>
 
@@ -832,7 +888,7 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
               }`}>
                 <ChargeIcon className={`h-5 w-5 ${isCharging ? "opacity-60" : ""}`} />
               </div>
-              <span className={`text-[9px] tracking-wider ${isCharging ? "text-slate-500" : "text-yellow-300"}`}>{isCharging ? "充电中" : "充电"}</span>
+              <span className={`text-[9px] tracking-wider ${isCharging ? "text-slate-500" : "text-yellow-300"}`}>{isCharging ? chromeT("sim.charging") : chromeT("sim.charge")}</span>
             </button>
 
             {/* 9. 手机升级 */}
@@ -848,7 +904,7 @@ export function CoffeeScaleSimulator({ children }: { children: ReactNode }) {
               }`}>
                 <Smartphone className="h-5 w-5" />
               </div>
-              <span className={`text-[9px] tracking-wider ${(isUpdating || updateComplete) ? "text-slate-500" : "text-blue-300"}`}>{isUpdating ? "升级中" : updateComplete ? "即将重启" : "手机升级"}</span>
+              <span className={`text-[9px] tracking-wider ${(isUpdating || updateComplete) ? "text-slate-500" : "text-blue-300"}`}>{isUpdating ? chromeT("update.updating") : updateComplete ? chromeT("update.restarting") : chromeT("update.phoneUpdate")}</span>
             </button>
           </div>
         </div>

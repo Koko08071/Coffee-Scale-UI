@@ -11,9 +11,9 @@ export function CurveBrewingMode() {
   const [selected, setSelected] = useState(0);
 
   const actions: MenuItem[] = [
-    { key: "continue", label: "继续计时", info: "过载解除，继续记录" },
-    { key: "save", label: "保存本段记录", info: "保存此次冲煮数据" },
-    { key: "discard", label: "放弃记录", info: "返回模式选择" },
+    { key: "continue", label: t("curve.finish.continue"), info: t("curve.finish.continueHint") },
+    { key: "save", label: t("curve.finish.save"), info: t("curve.finish.saveHint") },
+    { key: "discard", label: t("curve.finish.discard"), info: t("curve.finish.discardHint") },
   ];
 
   const handleSelect = useCallback((idx: number) => {
@@ -49,7 +49,7 @@ export function CurveBrewingMode() {
 
   return (
     <div className="h-full screen-surface overflow-hidden">
-      <MenuList title="曲线冲煮结束" subtitle="选择下一步操作" items={actions} selectedIndex={selected} onSelect={handleSelect} onMove={setSelected} pageSize={3} />
+      <MenuList title={t("curve.finish.title")} subtitle={t("curve.finish.subtitle")} items={actions} selectedIndex={selected} onSelect={handleSelect} onMove={setSelected} pageSize={3} />
     </div>
   );
 }

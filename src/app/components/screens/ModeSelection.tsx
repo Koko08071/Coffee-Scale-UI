@@ -49,8 +49,8 @@ export function ModeSelection() {
   return (
     <div className="h-full screen-surface">
       <MenuList
-        title="选择模式"
-        subtitle="旋转旋钮选择，按下进入"
+        title={t("mode.title")}
+        subtitle={t("menu.knobHint")}
         items={modes}
         selectedIndex={selected}
         onSelect={handleSelect}

@@ -2,8 +2,11 @@ import { RotateCcw } from "lucide-react";
 import { useRef, useState } from "react";
 import { useHardware } from "./HardwareContext";
 import { showHardwareToast } from "./HardwareToast";
+import { translations, type TranslationKey } from "../i18n/translations";
 
 type PressTimer = ReturnType<typeof setTimeout> | null;
+
+const hardwareT = (key: TranslationKey) => translations.zh[key] ?? key;
 
 function dispatchHardwareAction(type: string, detail: Record<string, unknown> = {}) {
   window.dispatchEvent(new CustomEvent("hardware-action", { detail: { type, ...detail } }));
@@ -15,6 +18,7 @@ export function Knob() {
     togglePower,
     cancelShutdown,
     overload,
+    wakeChargingDisplay,
   } = useHardware();
 
   const [knobPressed, setKnobPressed] = useState(false);
@@ -37,7 +41,7 @@ export function Knob() {
     knobLongTimer.current = setTimeout(() => {
       knobLongTriggered.current = true;
       togglePower();
-      showHardwareToast("电源状态已切换", "warning");
+      showHardwareToast(hardwareT("power.statusChanged"), "warning");
     }, 2000);
   };
 
@@ -47,9 +51,11 @@ export function Knob() {
     knobLongTimer.current = null;
     if (knobLongTriggered.current || overload) return;
 
+    if (wakeChargingDisplay()) return;
+
     if (shutdownCountdown !== null) {
       cancelShutdown();
-      showHardwareToast("已取消关机", "success");
+      showHardwareToast(hardwareT("power.cancelledShutdown"), "success");
     } else {
       dispatchHardwareAction("knob-single-click");
     }
@@ -69,7 +75,7 @@ export function Knob() {
         {/* 内按钮 */}
         <button
           type="button"
-          aria-label="旋钮确认"
+          aria-label={hardwareT("hw.knobConfirm")}
           onPointerDown={handleKnobDown}
           onPointerUp={handleKnobUp}
           onPointerLeave={() => {
@@ -94,7 +100,7 @@ export function Knob() {
         {/* 位置指示点 */}
         <span className="absolute left-1/2 top-1 -translate-x-1/2 h-1.5 w-1.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(47,107,255,.8)]" />
       </div>
-      <span className="text-[9px] text-slate-500 tracking-wider">滚轮旋转</span>
+      <span className="text-[9px] text-slate-500 tracking-wider">{hardwareT("hw.rotateWheel")}</span>
     </section>
   );
 }
@@ -105,16 +111,16 @@ export function XKeyButton() {
     <section className="flex flex-col items-center gap-1.5">
       <button
         type="button"
-        aria-label="X 快捷按键"
+        aria-label={hardwareT("hw.xKeyBtn")}
         onClick={() => {
           handleXKeyPress();
-          showHardwareToast("X 快捷启动", "success");
+          showHardwareToast(hardwareT("sim.xStarted"), "success");
         }}
         className="flex h-13 w-13 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl text-[17px] font-semibold text-blue-300 transition-all hover:border-blue-500/40 hover:bg-blue-500/[0.06] hover:shadow-[0_0_20px_rgba(47,107,255,.2)] active:scale-95"
       >
         X
       </button>
-      <span className="text-[9px] text-slate-500 tracking-wider">X 快捷按键</span>
+      <span className="text-[9px] text-slate-500 tracking-wider">{hardwareT("hw.xKeyBtn")}</span>
     </section>
   );
 }

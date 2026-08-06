@@ -29,9 +29,9 @@ export function XKeySettings() {
   }, [navigate, selected, updateSetting]);
 
   const MODE_LABELS: Record<string, string> = {
-    "智能曲线指导": t("settings.menu.curveGuide"),
-    "自由冲煮": t("settings.menu.freeBrew"),
-    "意式模式": t("settings.menu.espressoMode"),
+    "智能曲线指导": t("mode.curveGuide"),
+    "自由冲煮": t("mode.freeBrewing"),
+    "意式模式": t("mode.espresso"),
   };
 
   return (

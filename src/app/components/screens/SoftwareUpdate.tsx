@@ -46,13 +46,6 @@ export function SoftwareUpdate() {
           </div>
         </div>
 
-        <div className="linear-card mt-4 rounded-xl px-4 py-5">
-          <div className="flex items-center gap-3">
-            <div className="h-2.5 w-2.5 rounded-full bg-green-400 shadow-[0_0_12px_rgba(74,222,128,.6)]" />
-            <span className="text-[13px] text-slate-300 font-medium">系统运行正常</span>
-          </div>
-          <p className="mt-2 text-[10px] text-slate-500 leading-relaxed">设备信息 · 固件 {FIRMWARE_VERSION} · 传感器通讯正常</p>
-        </div>
       </div>
     </div>
   );

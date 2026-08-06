@@ -7,10 +7,14 @@ import {
   Ruler, SunMedium, Timer, Volume2,
 } from "lucide-react";
 
+// Remember the focused setting only while the user remains in the settings flow.
+// Leaving the settings root clears it so the next visit starts from the first item.
+let settingsSessionIndex = 0;
+
 export function SettingsMenu() {
   const navigate = useNavigate();
   const { t } = useT();
-  const [selected, setSelected] = useState(0);
+  const [selected, setSelected] = useState(settingsSessionIndex);
 
   const settingsItems: MenuItem[] = [
     { key: "unit", label: t("settings.menu.unit"), icon: Ruler },
@@ -32,8 +36,14 @@ export function SettingsMenu() {
   ];
 
   const handleSelect = useCallback((idx: number) => {
+    settingsSessionIndex = idx;
     navigate(paths[idx]);
   }, [navigate]);
+
+  const handleMove = useCallback((idx: number) => {
+    settingsSessionIndex = idx;
+    setSelected(idx);
+  }, []);
 
   useEffect(() => {
     const handleAction = (e: Event) => {
@@ -42,13 +52,16 @@ export function SettingsMenu() {
       if (type === "rotary-turn") {
         setSelected((prev) => {
           const n = settingsItems.length;
-          return (prev + (direction ?? 1) + n) % n;
+          const next = (prev + (direction ?? 1) + n) % n;
+          settingsSessionIndex = next;
+          return next;
         });
       } else if (type === "knob-single-click") {
         if (selected >= 0 && selected < settingsItems.length) {
           handleSelect(selected);
         }
       } else if (type === "navigate-back") {
+        settingsSessionIndex = 0;
         navigate("/menu");
       }
     };
@@ -63,12 +76,12 @@ export function SettingsMenu() {
   return (
     <div className="h-full screen-surface overflow-hidden">
       <MenuList
-        title="设置"
-        subtitle="旋转旋钮选择，按下进入"
+        title={t("settings.title")}
+        subtitle={t("menu.knobHint")}
         items={settingsItems}
         selectedIndex={selected}
         onSelect={handleSelect}
-        onMove={setSelected}
+        onMove={handleMove}
         pageSize={3}
       />
     </div>

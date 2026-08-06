@@ -1,45 +1,43 @@
 import { ChevronRight } from "lucide-react";
 import { useLocation } from "react-router";
 import { useT } from "../i18n/I18nContext";
+import type { TranslationKey } from "../i18n/translations";
 
-type CrumbLabel = string;
-type CrumbResolver = (t: (key: string) => string) => CrumbLabel;
-
-const crumbMap: Record<string, string | CrumbResolver> = {
-  "/": "主页",
-  "/menu": "主菜单",
-  "/settings": "设置",
-  "/settings/unit": "设置 / 单位",
-  "/settings/brightness": "设置 / 亮度",
-  "/settings/sound": "设置 / 声音",
-  "/settings/auto-timer": "设置 / 自动计时",
-  "/settings/auto-off": "设置 / 自动关机",
-  "/settings/language": "设置 / 语言",
-  "/settings/x-quick": "设置 / X快捷启动",
-  "/settings/dynamic-strategy": "设置 / 动态策略",
-  "/settings/factory-reset": "设置 / 恢复出厂",
-  "/settings/update": "设置 / 设备信息",
-  "/mode-selection": "模式选择",
-  "/mode-selection/espresso": "意式模式",
-  "/mode-selection/curve": "曲线指导",
-  "/mode-selection/curve/select": "选择曲线",
-  "/mode-selection/curve/select/categories": "选择曲线",
-  "/mode-selection/curve/select/mine": "我的曲线",
-  "/mode-selection/curve/select/bean": "豆卡曲线",
-  "/mode-selection/curve/select/master": "大师曲线",
-  "/curve-manage": (t) => t("crumb.deleteCurve"),
-  "/mode-selection/free": "自由冲煮",
-  "/calibration": "校准",
+const crumbMap: Record<string, TranslationKey> = {
+  "/": "home.title",
+  "/menu": "crumb.menu",
+  "/settings": "crumb.settings",
+  "/settings/unit": "crumb.unit",
+  "/settings/brightness": "crumb.brightness",
+  "/settings/sound": "crumb.sound",
+  "/settings/auto-timer": "crumb.autoTimer",
+  "/settings/auto-off": "crumb.autoOff",
+  "/settings/language": "crumb.language",
+  "/settings/x-quick": "crumb.xKey",
+  "/settings/dynamic-strategy": "crumb.dynamicStrategy",
+  "/settings/factory-reset": "crumb.factoryReset",
+  "/settings/update": "crumb.deviceInfo",
+  "/mode-selection": "crumb.modeSelect",
+  "/mode-selection/espresso": "crumb.espressoMode",
+  "/mode-selection/curve": "crumb.curveGuide",
+  "/mode-selection/curve/select": "crumb.selectCurve",
+  "/mode-selection/curve/select/categories": "crumb.selectCurve",
+  "/mode-selection/curve/select/mine": "crumb.myCurves",
+  "/mode-selection/curve/select/bean": "crumb.cardCurves",
+  "/mode-selection/curve/select/master": "crumb.masterCurves",
+  "/curve-manage": "crumb.deleteCurve",
+  "/mode-selection/free": "crumb.freeBrew",
+  "/calibration": "crumb.calibration",
 };
 
-function getCrumb(path: string, t: (key: string) => string): string {
+function getCrumb(path: string, t: (key: TranslationKey) => string): string {
   const entry = crumbMap[path];
   if (!entry) {
     // fallback: show last segment
     const seg = path.replace(/^\/+|\/+$/g, "").split("/").pop() || path;
     return seg;
   }
-  return typeof entry === "function" ? entry(t) : entry;
+  return t(entry);
 }
 
 export function Breadcrumb() {

@@ -52,9 +52,16 @@ button {
     linear-gradient(180deg, #0b1120 0%, #080d18 100%);
 }
 
+.simulator-layout {
+  transform-origin: center;
+  width: max-content;
+  will-change: transform;
+}
+
 /* ── 设备外壳 ── */
 .device-shell {
-  width: min(1100px, 98vw);
+  width: 780px;
+  flex: 0 0 auto;
   position: relative;
   z-index: 1;
   border-radius: 24px;
@@ -83,10 +90,65 @@ button {
   width: min(100%, 620px);
   aspect-ratio: 4 / 3;
   overflow: hidden;
-  border-radius: 14px;
-  background: var(--ms-bg);
-  border: 1px solid rgba(104, 146, 255, .14);
-  box-shadow: inset 0 0 40px rgba(0,0,0,.82), 0 0 0 4px rgba(2,4,12,.72), 0 0 34px rgba(47,107,255,.08);
+  border-radius: 10px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+/* Powered-off charging screen */
+.charging-battery {
+  position: relative;
+  width: 126px;
+  height: 62px;
+  padding: 8px;
+  border: 3px solid rgba(221, 252, 245, .78);
+  border-radius: 12px;
+  background: rgba(39, 198, 163, .035);
+  box-shadow: 0 0 34px rgba(39, 198, 163, .08), inset 0 0 18px rgba(39, 198, 163, .035);
+}
+
+.charging-battery-cap {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  width: 8px;
+  height: 24px;
+  margin-left: 4px;
+  transform: translateY(-50%);
+  border-radius: 0 5px 5px 0;
+  background: rgba(221, 252, 245, .72);
+}
+
+.charging-battery-cells {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  height: 100%;
+}
+
+.charging-battery-cell {
+  border-radius: 5px;
+  border: 1px solid rgba(130, 145, 166, .16);
+  background: rgba(130, 145, 166, .07);
+}
+
+.charging-battery-cell.is-breathing {
+  border-color: rgba(105, 230, 201, .72);
+  background: #27C6A3;
+  box-shadow: 0 0 14px rgba(39, 198, 163, .48);
+  animation: charging-cell-breathe 1.35s ease-in-out infinite;
+}
+
+.charging-battery-cell.is-full {
+  border-color: #8AF2D8;
+  background: #27C6A3;
+  box-shadow: 0 0 12px rgba(39, 198, 163, .38);
+}
+
+@keyframes charging-cell-breathe {
+  0%, 100% { opacity: .36; filter: brightness(.78); box-shadow: 0 0 6px rgba(39, 198, 163, .16); }
+  50% { opacity: 1; filter: brightness(1.18); box-shadow: 0 0 20px rgba(39, 198, 163, .68); }
 }
 
 /* ── 底部装饰条 ── */
@@ -111,6 +173,10 @@ button {
 
 .tools-area button > span {
   font-size: 10px !important;
+}
+
+.tools-area {
+  flex: 0 0 auto;
 }
 
 /* ── 页面表面（页面容器基类） ── */
@@ -544,6 +610,8 @@ button {
 @media (max-width: 760px) {
   .device-shell { padding: 10px; border-radius: 18px; }
   .device-deck { gap: 8px; }
+  .simulator-layout { flex-direction: column; }
+  .tools-area > div { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
 /* ── 动画 ── */

@@ -3,15 +3,16 @@ import { useNavigate } from "react-router";
 import { MenuList } from "../MenuList";
 import { useSettings } from "../SettingsContext";
 import { useT } from "../../i18n/I18nContext";
+import { localizeCurveName } from "../../i18n/curveNames";
 import { LineChart } from "lucide-react";
 
 export function RecentCurves() {
   const navigate = useNavigate();
   const { settings } = useSettings();
-  const { t } = useT();
+  const { t, lang } = useT();
   const [selected, setSelected] = useState(0);
 
-  const recentMap = new Map<string, { id: string; name: string; info: string }>();
+  const recentMap = new Map<string, { id: string; name: string }>();
 
   for (const record of settings.brewHistory) {
     if (!record.curveId) continue;
@@ -19,8 +20,7 @@ export function RecentCurves() {
     const curve = settings.curves.find((c) => c.id === record.curveId);
     recentMap.set(record.curveId, {
       id: record.curveId,
-      name: curve?.name ?? record.name,
-      info: `${record.weight} · ${record.duration}`,
+      name: localizeCurveName(curve ?? { id: record.curveId, name: record.name }, lang, t),
     });
   }
 
@@ -29,8 +29,7 @@ export function RecentCurves() {
     if (curve) {
       recentMap.set(curve.id, {
         id: curve.id,
-        name: curve.name,
-        info: `${curve.weight} · ${curve.duration}`,
+        name: localizeCurveName(curve, lang, t),
       });
     }
   }
@@ -82,15 +81,8 @@ export function RecentCurves() {
           <div className="px-4 pt-4 text-center">
             <h1 className="text-lg font-medium">{t("curve.recent")}</h1>
           </div>
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center text-slate-400">
+          <div className="flex flex-1 flex-col items-center justify-center px-6 text-center text-slate-400">
             <p>{t("manage.noRecent")}</p>
-            <button
-              type="button"
-              onClick={() => navigate("/mode-selection/curve/select")}
-              className="rounded-full bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-500"
-            >
-              {t("manage.goSelect")}
-            </button>
           </div>
         </>
       )}

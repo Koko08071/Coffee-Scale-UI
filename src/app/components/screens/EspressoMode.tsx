@@ -19,9 +19,7 @@ export function EspressoMode() {
     startTimer,
     pauseTimer,
     resetTimer,
-    updateWeight,
     tare,
-    tareOffset,
     overload,
   } = useHardware();
   const { settings } = useSettings();
@@ -74,36 +72,6 @@ export function EspressoMode() {
     startTimer,
   ]);
 
-  // 模拟器中的稳定意式流速；真实硬件接入后由称重传感器数据替代。
-  useEffect(() => {
-    if (overload || !timer.isRunning || completedRef.current) return;
-
-    const speed = Math.max(0.1, settings.simulationSpeed);
-    const espressoFlowRate = 2.5;
-    const intervalMs = 50 / speed;
-    const interval = window.setInterval(() => {
-      const current = timerRef.current;
-      const increment = (espressoFlowRate * intervalMs) / 1000;
-      const next = Math.min(targetYield + 2, current.weight + increment);
-
-      if (current.weight >= targetYield - 0.1) {
-        updateWeight(tareOffset + Math.max(current.weight, targetYield));
-        completedRef.current = true;
-        return;
-      }
-      updateWeight(tareOffset + next);
-    }, intervalMs);
-
-    return () => window.clearInterval(interval);
-  }, [
-    overload,
-    timer.isRunning,
-    targetYield,
-    updateWeight,
-    settings.simulationSpeed,
-    tareOffset,
-  ]);
-
   useEffect(() => {
     const handleHardware = (event: Event) => {
       const detail = (event as CustomEvent<{ type?: string }>).detail;
@@ -153,33 +121,23 @@ export function EspressoMode() {
     };
   }, [navigate, pauseTimer, resetTimer, startTimer, tare, targetYield]);
 
-  const hasBrewStarted = timer.isRunning || timer.time > 0 || completedRef.current;
-  const visualState = !hasBrewStarted
-    ? "normal"
-    : overload || progressRatio > 1.01
-      ? "over"
-      : progressRatio >= 0.85
-        ? "near"
-        : "normal";
   const flowProgress = Math.min(Math.abs(timer.flowRate) / 8, 1);
   const flowBarWidth = 12 + flowProgress * 88;
   const orbScale = 0.82 + Math.min(progressRatio, 1) * 0.18;
   const displayedYield = currentYield;
-
-  const palette = visualState === "over"
-    ? { primary: "255,77,94", secondary: "255,122,92" }
-    : visualState === "near"
-      ? { primary: "255,194,71", secondary: "255,92,55" }
-      : { primary: "67,199,255", secondary: "47,107,255" };
+  const clampedProgress = hasTaredRef.current ? Math.min(progressRatio, 1) : 0;
+  const progressPercent = Math.round(clampedProgress * 100);
+  const progressRadius = 106;
+  const progressCircumference = 2 * Math.PI * progressRadius;
 
   const visualStyle = {
-    "--espresso-primary": palette.primary,
-    "--espresso-secondary": palette.secondary,
+    "--espresso-primary": "67,199,255",
+    "--espresso-secondary": "47,107,255",
   } as CSSProperties;
 
   return (
     <div
-      className={`espresso-focus is-${visualState} relative h-full w-full overflow-hidden bg-[#02060B] text-[#F5F7FA]`}
+      className="espresso-focus relative h-full w-full overflow-hidden bg-[#02060B] text-[#F5F7FA]"
       style={visualStyle}
     >
       <div
@@ -198,7 +156,7 @@ export function EspressoMode() {
         />
       </div>
 
-      {/* 左上：实时流速 */}
+      {/* 左上：流速 */}
       <div className="absolute left-[3.2%] top-[8.5%] z-30 flex h-[102px] w-[132px] items-center justify-center">
         <div aria-hidden="true" className="espresso-side-orb absolute inset-0 rounded-full" />
         <div
@@ -210,15 +168,14 @@ export function EspressoMode() {
         </div>
       </div>
 
-      {/* 右上：目标液重 */}
+      {/* 右上：萃取时间 */}
       <div className="absolute right-[3.2%] top-[8.5%] z-30 flex h-[102px] w-[132px] items-center justify-center">
         <div aria-hidden="true" className="espresso-side-orb absolute inset-0 rounded-full" />
         <div
-          className="relative whitespace-nowrap text-[30px] font-semibold tabular-nums tracking-[-0.045em]"
+          className="relative whitespace-nowrap text-[30px] font-semibold tabular-nums tracking-[-0.05em]"
           style={{ textShadow: "0 2px 5px rgba(0,0,0,.95), 0 0 12px rgba(255,255,255,.28)" }}
         >
-          {targetYield.toFixed(1)}
-          <span className="ml-1 text-[14px] tracking-normal">g</span>
+          {formatTime(timer.time)}
         </div>
       </div>
 
@@ -239,35 +196,75 @@ export function EspressoMode() {
         </div>
       </div>
 
+      {/* 环绕重量的液重进度环：目标值仅用于计算，不直接显示。 */}
+      <div className="pointer-events-none absolute left-1/2 top-[53%] z-20 h-[240px] w-[240px] -translate-x-1/2 -translate-y-1/2">
+        <svg className="h-full w-full -rotate-90 overflow-visible" viewBox="0 0 240 240" aria-hidden="true">
+          <defs>
+            <linearGradient id="espresso-progress-gradient" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#43C7FF" />
+              <stop offset="100%" stopColor="#2F6BFF" />
+            </linearGradient>
+          </defs>
+          <circle
+            cx="120"
+            cy="120"
+            r={progressRadius}
+            fill="none"
+            stroke="rgba(67,199,255,.12)"
+            strokeWidth="4"
+          />
+          <circle
+            cx="120"
+            cy="120"
+            r={progressRadius}
+            fill="none"
+            stroke="url(#espresso-progress-gradient)"
+            strokeWidth="5"
+            strokeLinecap="round"
+            strokeDasharray={progressCircumference}
+            strokeDashoffset={progressCircumference * (1 - clampedProgress)}
+            className="transition-[stroke-dashoffset] duration-300 ease-out"
+            style={{ filter: "drop-shadow(0 0 7px rgba(67,199,255,.72))" }}
+          />
+        </svg>
+      </div>
+
       <div className="absolute left-1/2 top-[53%] z-30 -translate-x-1/2 -translate-y-1/2 text-center" aria-live="polite">
-        <div className="relative px-9 py-7">
-          <div className="absolute inset-[-20px] rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(2,6,11,.98)_0%,rgba(2,6,11,.86)_38%,rgba(2,6,11,.34)_64%,transparent_77%)] backdrop-blur-[4px]" />
+        <div className="relative px-9 py-5">
+          <div
+            className="absolute left-1/2 top-1/2 h-[212px] w-[212px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.17] backdrop-blur-[10px] backdrop-saturate-75"
+            style={{
+              background: [
+                "radial-gradient(circle at 32% 20%, rgba(255,255,255,.1) 0%, rgba(255,255,255,.025) 25%, transparent 43%)",
+                "linear-gradient(145deg, rgba(255,255,255,.04) 0%, rgba(255,255,255,.012) 46%, rgba(0,0,0,.09) 100%)",
+              ].join(", "),
+              boxShadow:
+                "inset 0 1px 0 rgba(255,255,255,.22), inset 9px 7px 24px rgba(255,255,255,.025), inset -12px -16px 30px rgba(0,0,0,.08), 0 14px 40px rgba(0,0,0,.12)",
+            }}
+          />
           <div
             className="relative whitespace-nowrap text-[68px] font-semibold leading-none tabular-nums tracking-[-0.06em]"
-            style={{ textShadow: "0 3px 6px #000, 0 0 14px #02060B, 0 0 18px rgba(255,255,255,.14)" }}
+            style={{ textShadow: "0 3px 7px rgba(0,0,0,.72), 0 0 16px rgba(2,6,11,.7), 0 0 18px rgba(255,255,255,.16)" }}
           >
             {displayedYield.toFixed(1)}
             <span className="ml-2 text-[18px] tracking-normal">g</span>
           </div>
-        </div>
-      </div>
-
-      {/* 下方：萃取时间 */}
-      <div className="absolute bottom-[8%] left-1/2 z-40 -translate-x-1/2">
-        <div className="flex items-center gap-2 rounded-full border border-white/[0.12] bg-[#0B1119]/85 px-5 py-2 shadow-[0_0_18px_rgba(0,0,0,.7)] backdrop-blur-md">
-          <span className="relative h-4 w-4 rounded-full border-[1.5px] border-white/80 before:absolute before:left-1/2 before:top-[2px] before:h-[5px] before:w-px before:-translate-x-1/2 before:bg-white/80 after:absolute after:left-1/2 after:top-1/2 after:h-px after:w-[4px] after:bg-white/80" />
-          <span className="text-[23px] font-semibold tabular-nums tracking-[-0.03em]">{formatTime(timer.time)}</span>
+          <div className="relative mt-3 text-[12px] font-semibold tabular-nums tracking-[0.14em] text-[#8FE8FF]">
+            {progressPercent}%
+          </div>
         </div>
       </div>
 
       {/* 等待阶段保留原有操作提示；开始萃取后自动隐藏。 */}
-      {isWaiting && (
+      {(isWaiting || isComplete) && (
         <div className="absolute bottom-[1.5%] left-1/2 z-40 -translate-x-1/2 whitespace-nowrap text-center text-[10px] font-medium tracking-[0.02em] text-[#8291A6]">
-          {!hasTaredRef.current
-            ? t("espresso.readyTareHint")
-            : settings.autoTimer
-              ? t("espresso.autoStartHint")
-              : t("espresso.clickKnobAgain")}
+          {isComplete
+            ? t("espresso.clickKnobBack")
+            : !hasTaredRef.current
+              ? t("espresso.readyTareHint")
+              : settings.autoTimer
+                ? t("espresso.autoStartHint")
+                : t("espresso.clickKnobAgain")}
         </div>
       )}
     </div>

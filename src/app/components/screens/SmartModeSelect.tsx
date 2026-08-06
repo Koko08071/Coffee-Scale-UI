@@ -32,8 +32,9 @@ export function SmartModeSelect() {
   ] as const;
 
   return (
-    <div className="screen-surface h-full text-white">
+    <div className="screen-surface h-full overflow-hidden pt-4 text-white">
       <MenuList
+        title={t("crumb.dynamicStrategy")}
         items={options.map((option) => ({
           label: option.label,
           info: settings.dynamicStrategy === option.label ? t("common.current") : option.info,

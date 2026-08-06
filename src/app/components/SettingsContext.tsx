@@ -63,6 +63,14 @@ const sampleCurves: BrewCurve[] = [
   { id: "master-3", name: "大师 · 浅烘高萃", weight: "255g", duration: "02:50", source: "大师（官方）", dose: 15, ratio: 17, grind: 7 },
 ];
 
+const LANGUAGE_STORAGE_KEY = "coffee-scale-language";
+
+const getStoredLanguage = () => {
+  if (typeof window === "undefined") return "简体中文";
+  const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+  return stored === "English" ? "English" : "简体中文";
+};
+
 const createInitialSettings = (): Settings => ({
   xKeyMode: "智能曲线指导",
   dynamicStrategy: "固定目标",
@@ -72,7 +80,7 @@ const createInitialSettings = (): Settings => ({
   brightness: 2, // 索引 0-3，对应低/中/高/超高
   autoOff: "5min",
   sound: true,
-  language: "简体中文",
+  language: getStoredLanguage(),
   bluetooth: false,
   lastUsedCurve: null,
   curves: sampleCurves.map((curve) => ({ ...curve })),
@@ -90,6 +98,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<Settings>(createInitialSettings);
 
   const updateSetting = <K extends keyof Settings>(key: K, value: Settings[K]) => {
+    if (key === "language" && typeof window !== "undefined") {
+      window.localStorage.setItem(LANGUAGE_STORAGE_KEY, String(value));
+    }
     setSettings((previous) => ({ ...previous, [key]: value }));
   };
 
