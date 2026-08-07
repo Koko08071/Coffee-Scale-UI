@@ -330,8 +330,8 @@ export function BrewSession({ mode }: { mode: BrewMode }) {
   // 冲煮标题颜色与当前三段式阶段保持一致。
   const brewingStage = useMemo((): { label: string; color: string } => {
     if (view !== "brewing") return { label: t("brew.ready"), color: "#8291A6" };
-    if (activeBrewStage === 0) return { label: t("brew.blooming"), color: "#FFC247" };
-    return { label: t("brew.pouring"), color: "#43C7FF" };
+    if (activeBrewStage === 0) return { label: t("brew.blooming"), color: "#27C6A3" };
+    return { label: t("brew.pouring"), color: "#27C6A3" };
   }, [activeBrewStage, t, view]);
   const brewStageLabels = [t("brew.stageBloom"), t("brew.stageFirst"), t("brew.stageSecond")];
 
